@@ -1,87 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Power Monitor</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Power Monitor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            border: "hsl(214.3 31.8% 91.4%)",
+            input: "hsl(214.3 31.8% 91.4%)",
+            ring: "hsl(222.2 84% 4.9%)",
+            background: "hsl(0 0% 100%)",
+            foreground: "hsl(222.2 84% 4.9%)",
+            primary: {
+              DEFAULT: "hsl(222.2 47.4% 11.2%)",
+              foreground: "hsl(210 40% 98%)",
+            },
+            secondary: {
+              DEFAULT: "hsl(210 40% 96.1%)",
+              foreground: "hsl(222.2 47.4% 11.2%)",
+            },
+            muted: {
+              DEFAULT: "hsl(210 40% 96.1%)",
+              foreground: "hsl(215.4 16.3% 46.9%)",
+            },
+            card: {
+              DEFAULT: "hsl(0 0% 100%)",
+              foreground: "hsl(222.2 84% 4.9%)",
+            },
+          },
+          borderRadius: {
+            lg: "0.5rem",
+            md: "calc(0.5rem - 2px)",
+            sm: "calc(0.5rem - 4px)",
+          },
+        },
+      },
+    }
+  </script>
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>Power Monitor</h1>
-            <div class="theme-toggle">
-                <button id="themeToggle" class="theme-btn">
-                    <span class="light-icon">☀️</span>
-                    <span class="dark-icon">🌙</span>
-                </button>
+<body class="bg-background text-foreground min-h-screen">
+  <div class="container mx-auto px-2 py-6 flex flex-col min-h-screen">
+    <header class="flex items-center justify-between mb-6 pb-4 border-b border-border">
+      <h1 class="text-3xl font-bold tracking-tight">Power Monitor</h1>
+      <button id="themeToggle" class="rounded-md border border-input bg-background px-3 py-2 text-sm font-medium shadow-sm hover:bg-muted transition flex items-center gap-2">
+        <span class="light-icon">☀️</span>
+        <span class="dark-icon hidden">🌙</span>
+      </button>
+    </header>
+    <main class="flex flex-1 gap-6 flex-col md:flex-row">
+      <!-- Left Panel -->
+      <aside class="w-full md:w-96 flex-shrink-0 flex flex-col gap-4">
+        <!-- Device Configuration Card -->
+        <div class="bg-card border border-border rounded-lg shadow-sm p-6 flex flex-col gap-4">
+          <div>
+            <h2 class="text-xl font-semibold mb-2">Device Configuration</h2>
+            <div class="flex items-center gap-2 mb-2">
+              <span id="statusDot" class="inline-block w-3 h-3 rounded-full bg-destructive transition-colors"></span>
+              <span id="statusText" class="font-medium">Disconnected</span>
             </div>
-        </header>
-
-        <main>
-            <!-- Left Panel - Device Configuration -->
-            <div class="left-panel">
-                <div class="panel-header">
-                    <h2>Device Configuration</h2>
-                </div>
-                
-                <div class="connection-section">
-                    <div class="status-indicator">
-                        <span class="status-dot" id="statusDot"></span>
-                        <span class="status-text" id="statusText">Disconnected</span>
-                    </div>
-                    
-                    <div class="connection-controls">
-                        <button id="connectBtn" class="btn btn-primary">Connect</button>
-                        <button id="disconnectBtn" class="btn btn-secondary" disabled>Disconnect</button>
-                    </div>
-                    
-                    <div class="device-info" id="deviceInfo">
-                        <p>No device connected</p>
-                    </div>
-                </div>
-
-                <div class="data-info">
-                    <h3>Data Format</h3>
-                    <p>The device sends JSON data in the format:</p>
-                    <pre>{"cS":[{"ch":0,"v_mV":1234,"c_mA":123,"p_mW":12345,"ts":1234567890}]}</pre>
-                </div>
+            <div class="flex gap-2 mb-2">
+              <button id="connectBtn" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2" type="button">Connect</button>
+              <button id="disconnectBtn" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-muted text-foreground hover:bg-muted/80 h-10 px-4 py-2" type="button" disabled>Disconnect</button>
             </div>
-
-            <!-- Right Panel - Charts -->
-            <div class="right-panel">
-                <div class="charts-container">
-                    <div class="chart-section">
-                        <h3>Voltage (mV)</h3>
-                        <canvas id="voltageChart"></canvas>
-                    </div>
-                    
-                    <div class="chart-section">
-                        <h3>Current (mA)</h3>
-                        <canvas id="currentChart"></canvas>
-                    </div>
-                    
-                    <div class="chart-section">
-                        <h3>Power (mW)</h3>
-                        <canvas id="powerChart"></canvas>
-                    </div>
-                </div>
+            <div id="deviceInfo" class="text-muted-foreground text-sm bg-muted rounded px-3 py-2">
+              <p>No device connected</p>
             </div>
-        </main>
-
-        <!-- Console Panel -->
-        <div class="console-panel">
-            <div class="console-header">
-                <h3>Debug Console</h3>
-                <button id="consoleToggle" class="btn btn-small">Show/Hide</button>
-            </div>
-            <div class="console-content" id="consoleContent">
-                <div class="console-messages" id="consoleMessages"></div>
-            </div>
+          </div>
+          <div>
+            <h3 class="text-base font-medium mb-1">Data Format</h3>
+            <p class="text-muted-foreground text-xs mb-1">The device sends JSON data in the format:</p>
+            <pre class="bg-muted rounded p-2 text-xs overflow-x-auto">{"cS":[{"ch":0,"v_mV":1234,"c_mA":123,"p_mW":12345,"ts":1234567890}]}</pre>
+          </div>
         </div>
-    </div>
-
-    <script src="script.js"></script>
+        <!-- Console Panel (moved below connect panel) -->
+        <div class="bg-card border border-border rounded-lg shadow-sm">
+          <div class="flex items-center justify-between px-4 py-2 border-b border-border">
+            <h3 class="text-base font-semibold">Debug Console</h3>
+            <button id="consoleToggle" class="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/80 transition">Show/Hide</button>
+          </div>
+          <div id="consoleContent" class="max-h-48 overflow-y-auto px-4 py-2 hidden">
+            <div id="consoleMessages" class="space-y-1 text-xs font-mono"></div>
+          </div>
+        </div>
+      </aside>
+      <!-- Right Panel -->
+      <section class="flex-1 flex flex-col gap-6">
+        <div class="grid grid-cols-1 gap-6">
+          <div class="bg-card border border-border rounded-lg shadow-sm p-4">
+            <h3 class="text-lg font-semibold mb-2">Voltage (mV)</h3>
+            <div class="h-48"><canvas id="voltageChart" class="w-full h-full"></canvas></div>
+          </div>
+          <div class="bg-card border border-border rounded-lg shadow-sm p-4">
+            <h3 class="text-lg font-semibold mb-2">Current (mA)</h3>
+            <div class="h-48"><canvas id="currentChart" class="w-full h-full"></canvas></div>
+          </div>
+          <div class="bg-card border border-border rounded-lg shadow-sm p-4">
+            <h3 class="text-lg font-semibold mb-2">Power (mW)</h3>
+            <div class="h-48"><canvas id="powerChart" class="w-full h-full"></canvas></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="script.js"></script>
 </body>
 </html>
