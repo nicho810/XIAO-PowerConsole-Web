@@ -16,6 +16,9 @@ class PowerMonitor {
             '#FFCE56', // Yellow
             '#4BC0C0'  // Green
         ];
+        this.testMode = false;
+        this.testInterval = null;
+        this.serialBuffer = ''; // Buffer for incomplete JSON data
         
         this.init();
     }
@@ -25,11 +28,99 @@ class PowerMonitor {
         this.setupEventListeners();
         this.initializeCharts();
         this.log('Power Monitor initialized', 'success');
+        
+        // Add test mode button
+        this.addTestModeButton();
+    }
+
+    addTestModeButton() {
+        const connectBtn = document.getElementById('connectBtn');
+        const testBtn = document.createElement('button');
+        testBtn.id = 'testBtn';
+        testBtn.className = 'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-green-600 text-white hover:bg-green-700 h-10 px-4 py-2 ml-2';
+        testBtn.textContent = 'Test Mode';
+        testBtn.addEventListener('click', () => this.startTestMode());
+        connectBtn.parentNode.appendChild(testBtn);
+    }
+
+    startTestMode() {
+        if (this.testMode) {
+            this.stopTestMode();
+            return;
+        }
+
+        this.testMode = true;
+        this.isConnected = true;
+        this.updateConnectionStatus();
+        this.log('Test mode started - generating simulated data', 'success');
+        
+        // Update test button
+        const testBtn = document.getElementById('testBtn');
+        testBtn.textContent = 'Stop Test';
+        testBtn.className = 'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-red-600 text-white hover:bg-red-700 h-10 px-4 py-2 ml-2';
+        
+        // Generate test data every second
+        this.testInterval = setInterval(() => {
+            this.generateTestData();
+        }, 1000);
+    }
+
+    stopTestMode() {
+        this.testMode = false;
+        this.isConnected = false;
+        this.updateConnectionStatus();
+        this.log('Test mode stopped', 'warning');
+        
+        if (this.testInterval) {
+            clearInterval(this.testInterval);
+            this.testInterval = null;
+        }
+        
+        // Update test button
+        const testBtn = document.getElementById('testBtn');
+        testBtn.textContent = 'Test Mode';
+        testBtn.className = 'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-green-600 text-white hover:bg-green-700 h-10 px-4 py-2 ml-2';
+    }
+
+    generateTestData() {
+        const timestamp = Math.floor(Date.now() / 1000);
+        const data = {
+            cS: []
+        };
+        
+        // Generate data for 4 channels
+        for (let i = 0; i < 4; i++) {
+            const baseVoltage = 5000 + (i * 500); // 5V base + offset
+            const baseCurrent = 100 + (i * 50);   // 100mA base + offset
+            
+            // Add some variation
+            const voltageVariation = Math.sin(Date.now() / 1000 + i) * 200;
+            const currentVariation = Math.sin(Date.now() / 1000 + i + 1) * 20;
+            
+            const voltage = Math.round(baseVoltage + voltageVariation);
+            const current = Math.round(baseCurrent + currentVariation);
+            const power = Math.round((voltage * current) / 1000); // Convert to mW
+            
+            data.cS.push({
+                ch: i,
+                v_mV: voltage,
+                c_mA: current,
+                p_mW: power,
+                ts: timestamp
+            });
+        }
+        
+        this.updateCharts(data);
+        this.log(`Test data: ${JSON.stringify(data)}`, 'info');
     }
 
     setupTheme() {
         const savedTheme = localStorage.getItem('theme') || 'light';
-        document.documentElement.setAttribute('data-theme', savedTheme);
+        if (savedTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
         this.updateThemeButton(savedTheme);
     }
 
@@ -55,10 +146,15 @@ class PowerMonitor {
     }
 
     toggleTheme() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        const isDark = document.documentElement.classList.contains('dark');
+        const newTheme = isDark ? 'light' : 'dark';
         
-        document.documentElement.setAttribute('data-theme', newTheme);
+        if (newTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        
         localStorage.setItem('theme', newTheme);
         this.updateThemeButton(newTheme);
         this.updateChartsTheme();
@@ -69,16 +165,16 @@ class PowerMonitor {
         const darkIcon = document.querySelector('.dark-icon');
         
         if (theme === 'dark') {
-            lightIcon.style.display = 'none';
-            darkIcon.style.display = 'inline';
+            lightIcon.classList.add('hidden');
+            darkIcon.classList.remove('hidden');
         } else {
-            lightIcon.style.display = 'inline';
-            darkIcon.style.display = 'none';
+            lightIcon.classList.remove('hidden');
+            darkIcon.classList.add('hidden');
         }
     }
 
     updateChartsTheme() {
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const isDark = document.documentElement.classList.contains('dark');
         const textColor = isDark ? '#ffffff' : '#212529';
         const gridColor = isDark ? '#404040' : '#e9ecef';
 
@@ -128,6 +224,7 @@ class PowerMonitor {
             }
             
             this.isConnected = false;
+            this.serialBuffer = ''; // Clear the buffer
             this.updateConnectionStatus();
             this.log('Serial port disconnected', 'warning');
             
@@ -145,13 +242,21 @@ class PowerMonitor {
 
         if (this.isConnected) {
             statusDot.classList.add('connected');
-            statusText.textContent = 'Connected';
+            statusText.textContent = this.testMode ? 'Test Mode' : 'Connected';
             connectBtn.disabled = true;
             disconnectBtn.disabled = false;
-            deviceInfo.innerHTML = `
-                <p><strong>Port:</strong> ${this.port.getInfo().usbProductId || 'Unknown'}</p>
-                <p><strong>Status:</strong> Active</p>
-            `;
+            
+            if (this.testMode) {
+                deviceInfo.innerHTML = `
+                    <p><strong>Mode:</strong> Test Mode</p>
+                    <p><strong>Status:</strong> Generating simulated data</p>
+                `;
+            } else {
+                deviceInfo.innerHTML = `
+                    <p><strong>Port:</strong> ${this.port ? this.port.getInfo().usbProductId || 'Unknown' : 'Unknown'}</p>
+                    <p><strong>Status:</strong> Active</p>
+                `;
+            }
         } else {
             statusDot.classList.remove('connected');
             statusText.textContent = 'Disconnected';
@@ -186,15 +291,25 @@ class PowerMonitor {
 
     processData(data) {
         try {
-            // Split data by newlines and process each line
-            const lines = data.split('\n');
+            // Add new data to buffer
+            this.serialBuffer += data;
+            
+            // Split buffer by newlines and process each complete line
+            const lines = this.serialBuffer.split('\n');
+            
+            // Keep the last (potentially incomplete) line in the buffer
+            this.serialBuffer = lines.pop() || '';
             
             for (const line of lines) {
                 const trimmedLine = line.trim();
                 if (trimmedLine) {
-                    const jsonData = JSON.parse(trimmedLine);
-                    this.updateCharts(jsonData);
-                    this.log(`Received: ${trimmedLine}`, 'info');
+                    try {
+                        const jsonData = JSON.parse(trimmedLine);
+                        this.updateCharts(jsonData);
+                        this.log(`Received: ${trimmedLine}`, 'info');
+                    } catch (parseError) {
+                        this.log(`JSON parse error: ${parseError.message}`, 'error');
+                    }
                 }
             }
         } catch (error) {
@@ -203,6 +318,8 @@ class PowerMonitor {
     }
 
     initializeCharts() {
+        this.log('Initializing charts...', 'info');
+        
         const chartConfigs = [
             { id: 'voltageChart', label: 'Voltage (mV)', dataKey: 'voltage' },
             { id: 'currentChart', label: 'Current (mA)', dataKey: 'current' },
@@ -210,13 +327,22 @@ class PowerMonitor {
         ];
 
         chartConfigs.forEach(config => {
+            const canvas = document.getElementById(config.id);
+            if (!canvas) {
+                this.log(`Canvas element not found: ${config.id}`, 'error');
+                return;
+            }
+            
+            this.log(`Creating chart for ${config.id}`, 'info');
             this.charts[config.dataKey] = this.createChart(config.id, config.label);
         });
+        
+        this.log(`Charts initialized: ${Object.keys(this.charts).length} charts created`, 'info');
     }
 
     createChart(canvasId, label) {
         const ctx = document.getElementById(canvasId).getContext('2d');
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const isDark = document.documentElement.classList.contains('dark');
         const textColor = isDark ? '#ffffff' : '#212529';
         const gridColor = isDark ? '#404040' : '#e9ecef';
 
@@ -282,14 +408,21 @@ class PowerMonitor {
 
     updateCharts(data) {
         if (!data.cS || !Array.isArray(data.cS)) {
+            this.log('Invalid data format received', 'error');
             return;
         }
 
-        const timestamp = new Date();
+        this.log(`Updating charts with ${data.cS.length} channels`, 'info');
+
+        // Use the timestamp from the device data if available, otherwise use current time
+        const timestamp = data.cS[0] && data.cS[0].ts ? 
+            new Date(data.cS[0].ts * 1000) : new Date();
         
         data.cS.forEach(channel => {
             const channelNum = channel.ch;
             const channelLabel = `Channel ${channelNum}`;
+            
+            this.log(`Processing channel ${channelNum}: v=${channel.v_mV}mV, c=${channel.c_mA}mA, p=${channel.p_mW}mW`, 'info');
             
             // Update voltage chart
             this.updateChartDataset('voltage', channelNum, channelLabel, channel.v_mV, timestamp);
@@ -304,12 +437,16 @@ class PowerMonitor {
 
     updateChartDataset(chartType, channelNum, channelLabel, value, timestamp) {
         const chart = this.charts[chartType];
-        if (!chart) return;
+        if (!chart) {
+            this.log(`Chart not found for type: ${chartType}`, 'error');
+            return;
+        }
 
         // Find or create dataset for this channel
         let dataset = chart.data.datasets.find(ds => ds.label === channelLabel);
         
         if (!dataset) {
+            this.log(`Creating new dataset for ${channelLabel} in ${chartType} chart`, 'info');
             dataset = {
                 label: channelLabel,
                 data: [],
@@ -330,13 +467,20 @@ class PowerMonitor {
             y: value
         });
 
+        this.log(`Added data point to ${chartType} chart: ${channelLabel} = ${value}`, 'info');
+
         // Limit data points to prevent memory issues
         if (dataset.data.length > this.maxDataPoints) {
             dataset.data.shift();
         }
 
         // Update chart
-        chart.update('none');
+        try {
+            chart.update('none');
+            this.log(`Chart ${chartType} updated successfully`, 'info');
+        } catch (error) {
+            this.log(`Error updating chart ${chartType}: ${error.message}`, 'error');
+        }
     }
 
     log(message, type = 'info') {
@@ -358,7 +502,7 @@ class PowerMonitor {
 
     toggleConsole() {
         const consoleContent = document.getElementById('consoleContent');
-        consoleContent.classList.toggle('show');
+        consoleContent.classList.toggle('hidden');
     }
 }
 

@@ -278,11 +278,11 @@ main {
 .console-content {
     max-height: 300px;
     overflow-y: auto;
-    display: none;
+    display: block;
 }
 
-.console-content.show {
-    display: block;
+.console-content.hidden {
+    display: none;
 }
 
 .console-messages {
@@ -313,6 +313,11 @@ main {
 .console-message.warning {
     border-left-color: var(--warning-color);
     background: rgba(255, 193, 7, 0.1);
+}
+
+.console-message.info {
+    border-left-color: var(--accent-color);
+    background: rgba(0, 123, 255, 0.1);
 }
 
 /* Responsive Design */
