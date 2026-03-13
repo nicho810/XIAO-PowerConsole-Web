@@ -10,8 +10,8 @@ import { buffers, getSampleCount } from '@/store/measurement-store.js';
 
 // ── 模块级常量 — 稳定引用，零分配 ──────────────────────────────
 const SERIES: BufferSeriesConfig[] = [
-  { name: 'Ch A', color: '#ef4444', buffer: buffers.powerA },
-  { name: 'Ch B', color: '#eab308', buffer: buffers.powerB },
+  { name: 'Ch A', color: '--chart-power-a', buffer: buffers.powerA },
+  { name: 'Ch B', color: '--chart-power-b', buffer: buffers.powerB },
 ];
 
 export function PowerChart() {

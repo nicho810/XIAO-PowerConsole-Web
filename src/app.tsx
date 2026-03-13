@@ -56,20 +56,26 @@ export function App() {
 
       {/* 左 — 信息区 */}
       <div
-        className="overflow-y-auto p-4 flex-shrink-0"
+        className="overflow-y-auto p-5 flex-shrink-0"
         style={{ width: `${leftPct}%` }}
       >
         <Sidebar />
       </div>
 
-      {/* 拖拽条 */}
+      {/* 拖拽条 — 加宽 + 三圆点手柄 + 透明热区 */}
       <div
-        className="w-1 flex-shrink-0 bg-[hsl(var(--border))] hover:bg-[hsl(var(--primary))] cursor-col-resize transition-colors"
+        className="relative w-1.5 flex-shrink-0 bg-[hsl(var(--border))] hover:bg-[hsl(var(--primary))] cursor-col-resize transition-colors group before:content-[''] before:absolute before:inset-y-0 before:-left-1.5 before:-right-1.5"
         onPointerDown={onPointerDown}
-      />
+      >
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <span className="block w-1 h-1 rounded-full bg-[hsl(var(--muted-foreground))]" />
+          <span className="block w-1 h-1 rounded-full bg-[hsl(var(--muted-foreground))]" />
+          <span className="block w-1 h-1 rounded-full bg-[hsl(var(--muted-foreground))]" />
+        </div>
+      </div>
 
       {/* 右 — 图表区 */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-hidden p-5 flex flex-col">
         <MainContent />
       </div>
     </main>

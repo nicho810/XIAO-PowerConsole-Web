@@ -10,8 +10,8 @@ import { buffers, getSampleCount } from '@/store/measurement-store.js';
 
 // ── 模块级常量 — 稳定引用，零分配 ──────────────────────────────
 const SERIES: BufferSeriesConfig[] = [
-  { name: 'Ch A', color: '#3b82f6', buffer: buffers.voltageA },
-  { name: 'Ch B', color: '#f97316', buffer: buffers.voltageB },
+  { name: 'Ch A', color: '--chart-voltage-a', buffer: buffers.voltageA },
+  { name: 'Ch B', color: '--chart-voltage-b', buffer: buffers.voltageB },
 ];
 
 export function VoltageChart() {

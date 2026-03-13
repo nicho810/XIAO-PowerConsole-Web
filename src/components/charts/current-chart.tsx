@@ -10,8 +10,8 @@ import { buffers, getSampleCount } from '@/store/measurement-store.js';
 
 // ── 模块级常量 — 稳定引用，零分配 ──────────────────────────────
 const SERIES: BufferSeriesConfig[] = [
-  { name: 'Ch A', color: '#22c55e', buffer: buffers.currentA },
-  { name: 'Ch B', color: '#a855f7', buffer: buffers.currentB },
+  { name: 'Ch A', color: '--chart-current-a', buffer: buffers.currentA },
+  { name: 'Ch B', color: '--chart-current-b', buffer: buffers.currentB },
 ];
 
 export function CurrentChart() {

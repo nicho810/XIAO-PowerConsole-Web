@@ -35,7 +35,6 @@ export interface BufferSeriesConfig {
 interface Props {
   title: string;
   unit: string;
-  height?: number;
   timestampBuffer: RingBuffer;
   series: BufferSeriesConfig[];
   getSampleCount: () => number;
@@ -47,6 +46,12 @@ const THROTTLE_MS = 66;
 /** 显示上限 — 图表宽度约 600~800px，超出无视觉意义 */
 const MAX_DISPLAY = 600;
 
+/** CSS 变量 → hsl() 字符串，仅在 needsInit 时调用 */
+function resolveHsl(cssVar: string): string {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(cssVar).trim();
+  return `hsl(${raw})`;
+}
+
 /** 时间戳 → "M:SS.f" 标签 */
 function formatTimestamp(ms: number): string {
   const totalSec = ms / 1000;
@@ -57,7 +62,7 @@ function formatTimestamp(ms: number): string {
 }
 
 export function RealtimeChart({
-  title, unit, timestampBuffer, series: seriesConfig, getSampleCount, height = 200,
+  title, unit, timestampBuffer, series: seriesConfig, getSampleCount,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
@@ -164,43 +169,57 @@ export function RealtimeChart({
       // ── setOption: 首次 replace 建图，后续 merge 推数据 ────
       if (needsInit) {
         const t = themeRef.current;
+        const isDark = t === 'dark';
         chart.setOption({
           backgroundColor: 'transparent',
-          grid: { left: 50, right: 16, top: 30, bottom: 24 },
+          grid: { left: 50, right: 16, top: 8, bottom: 24 },
           tooltip: {
             trigger: 'axis',
-            backgroundColor: t === 'dark' ? '#1e293b' : '#fff',
-            borderColor: t === 'dark' ? '#334155' : '#e2e8f0',
-            textStyle: { color: t === 'dark' ? '#e2e8f0' : '#1e293b', fontSize: 11 },
+            backgroundColor: isDark ? '#1e293b' : '#fff',
+            borderColor: isDark ? '#334155' : '#e2e8f0',
+            borderRadius: 8,
+            padding: [8, 12],
+            textStyle: {
+              color: isDark ? '#e2e8f0' : '#1e293b',
+              fontSize: 11,
+              fontFamily: "ui-monospace, 'SF Mono', 'Cascadia Code', monospace",
+            },
+            extraCssText: 'box-shadow: 0 4px 12px hsl(0 0% 0% / 0.15);',
           },
           legend: {
             data: sc.map((s) => s.name),
-            textStyle: { color: t === 'dark' ? '#94a3b8' : '#64748b', fontSize: 11 },
+            textStyle: { color: isDark ? '#94a3b8' : '#64748b', fontSize: 10 },
             top: 0,
+            right: 8,
+            itemWidth: 12,
+            itemHeight: 8,
           },
           xAxis: {
             type: 'category',
             data: labels,
-            axisLabel: { color: t === 'dark' ? '#94a3b8' : '#64748b', fontSize: 10 },
-            axisLine: { lineStyle: { color: t === 'dark' ? '#334155' : '#e2e8f0' } },
+            axisLabel: { color: isDark ? '#94a3b8' : '#64748b', fontSize: 10 },
+            axisLine: { lineStyle: { color: isDark ? '#334155' : '#e2e8f0' } },
             splitLine: { show: false },
           },
           yAxis: {
             type: 'value',
             name: unit,
-            nameTextStyle: { color: t === 'dark' ? '#94a3b8' : '#64748b', fontSize: 10 },
-            axisLabel: { color: t === 'dark' ? '#94a3b8' : '#64748b', fontSize: 10 },
-            splitLine: { lineStyle: { color: t === 'dark' ? '#1e293b' : '#f1f5f9' } },
+            nameTextStyle: { color: isDark ? '#94a3b8' : '#64748b', fontSize: 10 },
+            axisLabel: { color: isDark ? '#94a3b8' : '#64748b', fontSize: 10 },
+            splitLine: { lineStyle: { color: isDark ? '#1e293b' : '#f1f5f9' } },
           },
-          series: sc.map((s, i) => ({
-            name: s.name,
-            type: 'line',
-            data: seriesData[i].data,
-            showSymbol: false,
-            lineStyle: { width: 1.5, color: s.color },
-            itemStyle: { color: s.color },
-            animation: false,
-          })),
+          series: sc.map((s, i) => {
+            const resolved = resolveHsl(s.color);
+            return {
+              name: s.name,
+              type: 'line',
+              data: seriesData[i].data,
+              showSymbol: false,
+              lineStyle: { width: 1.5, color: resolved },
+              itemStyle: { color: resolved },
+              animation: false,
+            };
+          }),
           animation: false,
         }, true);
       } else {
@@ -218,9 +237,12 @@ export function RealtimeChart({
   }, []);
 
   return (
-    <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-3">
-      <h3 className="text-sm font-semibold mb-1">{title}</h3>
-      <div ref={containerRef} style={{ height }} />
+    <div className="flex-1 min-h-0 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] card-elevated overflow-hidden flex flex-col">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-[hsl(var(--border))]">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">{title}</h3>
+        <span className="text-[10px] text-[hsl(var(--muted-foreground))] opacity-60">{unit}</span>
+      </div>
+      <div ref={containerRef} className="flex-1 min-h-0" />
     </div>
   );
 }

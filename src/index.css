@@ -28,6 +28,27 @@
   --radius: 0.5rem;
   --success: 142.1 76.2% 36.3%;
   --warning: 38 92% 50%;
+
+  /* 状态语义色 */
+  --status-idle:       220 9% 66%;
+  --status-connecting: 38 92% 50%;
+  --status-streaming:  142.1 76.2% 36.3%;
+  --status-test:       217 91% 60%;
+  --status-error:      0 84.2% 60.2%;
+
+  /* 图表系列色 */
+  --chart-voltage-a:   217 91% 60%;
+  --chart-voltage-b:   25 95% 53%;
+  --chart-current-a:   142 71% 45%;
+  --chart-current-b:   271 91% 65%;
+  --chart-power-a:     0 84% 60%;
+  --chart-power-b:     48 96% 53%;
+
+  /* 按钮语义色 */
+  --btn-success:            142.1 76.2% 36.3%;
+  --btn-success-foreground: 0 0% 100%;
+  --btn-danger:             0 84.2% 60.2%;
+  --btn-danger-foreground:  0 0% 100%;
 }
 
 .dark {
@@ -52,6 +73,27 @@
   --ring: 212.7 26.8% 83.9%;
   --success: 142.1 70.6% 45.3%;
   --warning: 38 92% 50%;
+
+  /* 状态语义色 */
+  --status-idle:       215 20.2% 50%;
+  --status-connecting: 38 92% 50%;
+  --status-streaming:  142.1 70.6% 45.3%;
+  --status-test:       217 91% 65%;
+  --status-error:      0 62.8% 50%;
+
+  /* 图表系列色 */
+  --chart-voltage-a:   217 91% 65%;
+  --chart-voltage-b:   25 95% 58%;
+  --chart-current-a:   142 71% 50%;
+  --chart-current-b:   271 91% 70%;
+  --chart-power-a:     0 84% 65%;
+  --chart-power-b:     48 96% 58%;
+
+  /* 按钮语义色 */
+  --btn-success:            142.1 70.6% 45.3%;
+  --btn-success-foreground: 0 0% 100%;
+  --btn-danger:             0 62.8% 50%;
+  --btn-danger-foreground:  0 0% 100%;
 }
 
 /* ================================================================
@@ -66,4 +108,31 @@ body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* ================================================================
+ * 工具类
+ * ================================================================ */
+
+/* 卡片阴影 */
+.card-elevated {
+  box-shadow: 0 1px 3px hsl(0 0% 0% / 0.06), 0 1px 2px hsl(0 0% 0% / 0.04);
+}
+.dark .card-elevated {
+  box-shadow: 0 1px 3px hsl(0 0% 0% / 0.3), 0 1px 2px hsl(0 0% 0% / 0.2);
+}
+
+/* 数值等宽显示 */
+.data-value {
+  font-family: ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 状态脉冲动画 */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.animate-pulse-dot {
+  animation: pulse-dot 1.5s ease-in-out infinite;
 }

@@ -11,7 +11,7 @@ import { PowerChart } from '@/components/charts/power-chart.js';
 
 export function MainContent() {
   return (
-    <section className="flex-1 flex flex-col gap-4">
+    <section className="h-full flex flex-col gap-4">
       <VoltageChart />
       <CurrentChart />
       <PowerChart />

@@ -7,25 +7,26 @@
 
 import { useDeviceStore, type ConnectionStatus as Status } from '@/store/device-store.js';
 
-const STATUS_CONFIG: Record<Status, { color: string; label: string }> = {
-  disconnected: { color: 'bg-gray-400',  label: 'Disconnected' },
-  connecting:   { color: 'bg-yellow-400', label: 'Connecting...' },
-  handshaking:  { color: 'bg-yellow-400', label: 'Handshaking...' },
-  streaming:    { color: 'bg-green-500',  label: 'Streaming' },
-  'test-mode':  { color: 'bg-blue-500',   label: 'Test Mode' },
+// ── 状态配置: CSS 变量色 + 脉冲动画 ────────────────────────────
+const STATUS_CONFIG: Record<Status, { color: string; pulse: boolean; label: string }> = {
+  disconnected: { color: 'bg-[hsl(var(--status-idle))]',        pulse: false, label: 'Disconnected' },
+  connecting:   { color: 'bg-[hsl(var(--status-connecting))]',   pulse: true,  label: 'Connecting...' },
+  handshaking:  { color: 'bg-[hsl(var(--status-connecting))]',   pulse: true,  label: 'Handshaking...' },
+  streaming:    { color: 'bg-[hsl(var(--status-streaming))]',    pulse: true,  label: 'Streaming' },
+  'test-mode':  { color: 'bg-[hsl(var(--status-test))]',        pulse: true,  label: 'Test Mode' },
 };
 
 export function ConnectionStatus() {
   const status = useDeviceStore((s) => s.status);
   const error = useDeviceStore((s) => s.error);
-  const { color, label } = STATUS_CONFIG[status];
+  const { color, pulse, label } = STATUS_CONFIG[status];
 
   return (
     <div className="flex items-center gap-2">
-      <span className={`inline-block w-2.5 h-2.5 rounded-full ${color} transition-colors`} />
+      <span className={`inline-block w-2.5 h-2.5 rounded-full ${color} ${pulse ? 'animate-pulse-dot' : ''} transition-colors`} />
       <span className="text-sm font-medium">{label}</span>
       {error && (
-        <span className="text-xs text-red-500 ml-auto truncate max-w-[150px]" title={error}>
+        <span className="text-xs text-[hsl(var(--status-error))] ml-auto truncate max-w-[150px]" title={error}>
           {error}
         </span>
       )}
