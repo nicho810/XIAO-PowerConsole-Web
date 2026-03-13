@@ -6,7 +6,7 @@ React 19 + TypeScript 5.8 + Vite 6 + Tailwind 4 + Zustand 5 + ECharts 5
 ```
 src/
 ├── main.tsx              — Vite 入口，挂载 React
-├── app.tsx               — App Shell，双面板布局
+├── app.tsx               — App Shell，可拖拽双栏布局 (左信息区 3:9 右图表区)
 ├── index.css             — Tailwind 指令 + CSS 变量（亮/暗主题）
 │
 ├── types/                — 纯类型定义，零运行时 (2 文件)
@@ -17,7 +17,7 @@ src/
 ├── lib/                  — 工具: RingBuffer + 格式化函数 (2 文件)
 │
 └── components/
-    ├── layout/           — Header + Sidebar + MainContent (3 文件)
+    ├── layout/           — Sidebar (含标题+主题切换) + MainContent (2 文件)
     ├── connection/       — 连接面板 + 状态指示 + 设备信息 (3 文件)
     ├── charts/           — ECharts 实时折线图: 电压/电流/功率 (4 文件)
     └── console/          — 可折叠调试日志 (1 文件)
