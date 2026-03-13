@@ -1,26 +1,27 @@
 /**
- * [INPUT]:  依赖 react, RealtimeChart, ChartSnapshot
+ * [INPUT]:  依赖 RealtimeChart, measurement-store 的 buffers/getSampleCount
  * [OUTPUT]: 对外提供 VoltageChart 组件
  * [POS]:    charts/ 的电压图表，被 MainContent 消费
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */
 
-import { useMemo } from 'react';
-import { RealtimeChart, type ChartSeries } from './realtime-chart.js';
-import type { ChartSnapshot } from '@/hooks/use-chart-data.js';
+import { RealtimeChart, type BufferSeriesConfig } from './realtime-chart.js';
+import { buffers, getSampleCount } from '@/store/measurement-store.js';
 
-export function VoltageChart({ data }: { data: ChartSnapshot }) {
-  const series = useMemo<ChartSeries[]>(() => [
-    { name: 'Ch A', data: data.voltageA, color: '#3b82f6' },
-    { name: 'Ch B', data: data.voltageB, color: '#f97316' },
-  ], [data.voltageA, data.voltageB]);
+// ── 模块级常量 — 稳定引用，零分配 ──────────────────────────────
+const SERIES: BufferSeriesConfig[] = [
+  { name: 'Ch A', color: '#3b82f6', buffer: buffers.voltageA },
+  { name: 'Ch B', color: '#f97316', buffer: buffers.voltageB },
+];
 
+export function VoltageChart() {
   return (
     <RealtimeChart
       title="Voltage"
       unit="V"
-      labels={data.labels}
-      series={series}
+      timestampBuffer={buffers.timestamp}
+      series={SERIES}
+      getSampleCount={getSampleCount}
     />
   );
 }

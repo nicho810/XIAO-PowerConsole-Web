@@ -1,26 +1,27 @@
 /**
- * [INPUT]:  依赖 react, RealtimeChart, ChartSnapshot
+ * [INPUT]:  依赖 RealtimeChart, measurement-store 的 buffers/getSampleCount
  * [OUTPUT]: 对外提供 CurrentChart 组件
  * [POS]:    charts/ 的电流图表，被 MainContent 消费
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */
 
-import { useMemo } from 'react';
-import { RealtimeChart, type ChartSeries } from './realtime-chart.js';
-import type { ChartSnapshot } from '@/hooks/use-chart-data.js';
+import { RealtimeChart, type BufferSeriesConfig } from './realtime-chart.js';
+import { buffers, getSampleCount } from '@/store/measurement-store.js';
 
-export function CurrentChart({ data }: { data: ChartSnapshot }) {
-  const series = useMemo<ChartSeries[]>(() => [
-    { name: 'Ch A', data: data.currentA, color: '#22c55e' },
-    { name: 'Ch B', data: data.currentB, color: '#a855f7' },
-  ], [data.currentA, data.currentB]);
+// ── 模块级常量 — 稳定引用，零分配 ──────────────────────────────
+const SERIES: BufferSeriesConfig[] = [
+  { name: 'Ch A', color: '#22c55e', buffer: buffers.currentA },
+  { name: 'Ch B', color: '#a855f7', buffer: buffers.currentB },
+];
 
+export function CurrentChart() {
   return (
     <RealtimeChart
       title="Current"
       unit="mA"
-      labels={data.labels}
-      series={series}
+      timestampBuffer={buffers.timestamp}
+      series={SERIES}
+      getSampleCount={getSampleCount}
     />
   );
 }

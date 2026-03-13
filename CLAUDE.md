@@ -13,7 +13,7 @@ src/
 ├── protocol/             — XPB 二进制协议: CRC, 解析, 构建, 解码 (4 文件)
 ├── serial/               — Web Serial API 封装 + 三阶段握手 (2 文件)
 ├── store/                — Zustand 状态: 设备连接 + 环形缓冲区 (2 文件)
-├── hooks/                — React Hooks: 串口, 协议, 主题, 图表, 日志 (5 文件)
+├── hooks/                — React Hooks: 串口, 测试模式, 主题, 日志 (4 文件)
 ├── lib/                  — 工具: RingBuffer + 格式化函数 (2 文件)
 │
 └── components/
@@ -34,7 +34,7 @@ src/
 ```
 USB Device → Web Serial (Uint8Array) → FrameParser (字节状态机)
   → codec 解码 → deriveMeasurement 派生 → RingBuffer × 7
-  → rAF 30fps 快照 → ECharts 命令式更新
+  → 图表内嵌 rAF 15fps 直读 buffer → ECharts 命令式更新（零 React 渲染）
 ```
 
 ## 架构决策
@@ -44,7 +44,8 @@ USB Device → Web Serial (Uint8Array) → FrameParser (字节状态机)
 - CRC-8/MAXIM 预计算查找表，模块加载时生成
 - RingBuffer 用 Float64Array 避免 GC 压力
 - 100Hz 数据不走 React 渲染，RingBuffer 可变外部状态
-- ECharts `setOption()` 命令式更新，绕过 vDOM diff
+- ECharts 首次 replace 建图 + 后续 merge 推数据，图表内 rAF 直读 buffer
+- 图表数据路径零 React 渲染：无 setState，无 useEffect 触发，无 props diff
 - 三阶段握手: START → CONFIG → CONFIG_ACK → DATA stream
 - 测试模式与实机走同一 pushSample 路径
 

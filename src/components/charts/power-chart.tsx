@@ -1,26 +1,27 @@
 /**
- * [INPUT]:  依赖 react, RealtimeChart, ChartSnapshot
+ * [INPUT]:  依赖 RealtimeChart, measurement-store 的 buffers/getSampleCount
  * [OUTPUT]: 对外提供 PowerChart 组件
  * [POS]:    charts/ 的功率图表，被 MainContent 消费
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */
 
-import { useMemo } from 'react';
-import { RealtimeChart, type ChartSeries } from './realtime-chart.js';
-import type { ChartSnapshot } from '@/hooks/use-chart-data.js';
+import { RealtimeChart, type BufferSeriesConfig } from './realtime-chart.js';
+import { buffers, getSampleCount } from '@/store/measurement-store.js';
 
-export function PowerChart({ data }: { data: ChartSnapshot }) {
-  const series = useMemo<ChartSeries[]>(() => [
-    { name: 'Ch A', data: data.powerA, color: '#ef4444' },
-    { name: 'Ch B', data: data.powerB, color: '#eab308' },
-  ], [data.powerA, data.powerB]);
+// ── 模块级常量 — 稳定引用，零分配 ──────────────────────────────
+const SERIES: BufferSeriesConfig[] = [
+  { name: 'Ch A', color: '#ef4444', buffer: buffers.powerA },
+  { name: 'Ch B', color: '#eab308', buffer: buffers.powerB },
+];
 
+export function PowerChart() {
   return (
     <RealtimeChart
       title="Power"
       unit="mW"
-      labels={data.labels}
-      series={series}
+      timestampBuffer={buffers.timestamp}
+      series={SERIES}
+      getSampleCount={getSampleCount}
     />
   );
 }
