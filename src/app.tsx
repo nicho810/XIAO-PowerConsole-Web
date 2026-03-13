@@ -17,6 +17,9 @@ import { MainContent } from './components/layout/main-content.js';
 const MIN_LEFT = 15;
 const MAX_LEFT = 50;
 
+/** 左栏最小像素宽度 — 保证内容不被压碎 */
+const MIN_LEFT_PX = 280;
+
 /** 3:12 = 25% */
 const DEFAULT_LEFT = 25;
 
@@ -37,7 +40,8 @@ export function App() {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
       const pct = ((ev.clientX - rect.left) / rect.width) * 100;
-      setLeftPct(Math.min(Math.max(pct, MIN_LEFT), MAX_LEFT));
+      const minPct = Math.max(MIN_LEFT, (MIN_LEFT_PX / rect.width) * 100);
+      setLeftPct(Math.min(Math.max(pct, minPct), MAX_LEFT));
     };
 
     const onPointerUp = () => {
@@ -57,7 +61,7 @@ export function App() {
       {/* 左 — 信息区 */}
       <div
         className="overflow-y-auto p-5 flex-shrink-0"
-        style={{ width: `${leftPct}%` }}
+        style={{ width: `${leftPct}%`, minWidth: MIN_LEFT_PX }}
       >
         <Sidebar />
       </div>
