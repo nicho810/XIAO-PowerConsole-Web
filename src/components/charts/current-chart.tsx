@@ -19,7 +19,7 @@ export function CurrentChart({ data }: { data: ChartSnapshot }) {
     <RealtimeChart
       title="Current"
       unit="mA"
-      timestamps={data.timestamps}
+      labels={data.labels}
       series={series}
     />
   );

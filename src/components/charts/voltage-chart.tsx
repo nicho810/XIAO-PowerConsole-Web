@@ -19,7 +19,7 @@ export function VoltageChart({ data }: { data: ChartSnapshot }) {
     <RealtimeChart
       title="Voltage"
       unit="V"
-      timestamps={data.timestamps}
+      labels={data.labels}
       series={series}
     />
   );

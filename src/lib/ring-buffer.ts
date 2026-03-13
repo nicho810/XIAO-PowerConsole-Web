@@ -8,7 +8,8 @@
 // ============================================================
 //  RingBuffer — 定容环形缓冲区 (Float64Array)
 // ============================================================
-//  默认 3000 = 30s @ 100Hz，O(1) push，O(n) toArray 快照
+//  默认 3000 = 30s @ 100Hz，O(1) push，O(n) 快照
+//  toArray(): 分配新数组返回   copyTo(): 写入外部缓冲区零分配
 //  内部用 Float64Array 避免 GC 压力，适合高频实时数据流
 // ============================================================
 
@@ -36,21 +37,23 @@ export class RingBuffer {
   //  读取
   // ----------------------------------------------------------
 
-  /** 返回按时间排序的快照数组，供图表一次性渲染 */
+  /** 返回按时间排序的快照数组（每次分配新 Float64Array） */
   toArray(): Float64Array {
     const out = new Float64Array(this._length);
-
-    if (this._length < this.capacity) {
-      // 未满：数据从 0 开始连续排列
-      out.set(this._buf.subarray(0, this._length));
-    } else {
-      // 已满：_head 指向最旧数据
-      const tail = this.capacity - this._head;
-      out.set(this._buf.subarray(this._head, this._head + tail), 0);
-      out.set(this._buf.subarray(0, this._head), tail);
-    }
-
+    this.copyTo(out);
     return out;
+  }
+
+  /** 将有序数据写入目标缓冲区，返回有效元素数。零分配。 */
+  copyTo(target: Float64Array): number {
+    if (this._length < this.capacity) {
+      target.set(this._buf.subarray(0, this._length));
+    } else {
+      const tail = this.capacity - this._head;
+      target.set(this._buf.subarray(this._head, this._head + tail), 0);
+      target.set(this._buf.subarray(0, this._head), tail);
+    }
+    return this._length;
   }
 
   // ----------------------------------------------------------

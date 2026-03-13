@@ -19,7 +19,7 @@ export function PowerChart({ data }: { data: ChartSnapshot }) {
     <RealtimeChart
       title="Power"
       unit="mW"
-      timestamps={data.timestamps}
+      labels={data.labels}
       series={series}
     />
   );
