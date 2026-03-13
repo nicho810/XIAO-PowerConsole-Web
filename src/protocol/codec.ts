@@ -37,8 +37,8 @@ export function decodeRealtimeData(payload: Uint8Array): RealtimeDataPayload {
 export function decodeDeviceConfig(payload: Uint8Array): DeviceConfigPayload {
   const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
   return {
-    shuntR_a: view.getFloat32(0, true),
-    shuntR_b: view.getFloat32(4, true),
+    shuntR_a: parseFloat(view.getFloat32(0, true).toFixed(3)),
+    shuntR_b: parseFloat(view.getFloat32(4, true).toFixed(3)),
     version:  view.getUint8(8),
   };
 }

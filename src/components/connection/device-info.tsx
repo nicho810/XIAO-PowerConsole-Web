@@ -67,8 +67,8 @@ export function DeviceInfo() {
       <div className="space-y-1 text-sm">
         {config && (
           <>
-            <Row label="Shunt R (A)" value={`${config.shuntR_a} ohm`} />
-            <Row label="Shunt R (B)" value={`${config.shuntR_b} ohm`} />
+            <Row label="Shunt R (A)" value={`${config.shuntR_a.toFixed(3)} Ω`} />
+            <Row label="Shunt R (B)" value={`${config.shuntR_b.toFixed(3)} Ω`} />
             <Row label="Protocol" value={`v${config.version}`} />
           </>
         )}
