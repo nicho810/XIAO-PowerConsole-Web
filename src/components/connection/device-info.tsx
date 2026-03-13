@@ -5,15 +5,52 @@
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */
 
+import { useState, useEffect, useRef } from 'react';
 import { useDeviceStore } from '@/store/device-store.js';
-import { useMeasurementStore } from '@/store/measurement-store.js';
+import { getSampleCount, getLatest } from '@/store/measurement-store.js';
 import { formatVoltage, formatCurrent, formatPower } from '@/lib/utils.js';
+import type { DualChannelSample } from '@/types/measurement.js';
+
+/** 10Hz 足够人眼读取数字 */
+const DISPLAY_THROTTLE = 100;
 
 export function DeviceInfo() {
   const config = useDeviceStore((s) => s.config);
   const status = useDeviceStore((s) => s.status);
-  const latest = useMeasurementStore((s) => s.latest);
-  const sampleCount = useMeasurementStore((s) => s.sampleCount);
+
+  // ── rAF 轮询 — 100Hz 数据不碰 React，10Hz 刷新显示 ──────
+  const [latest, setLatest] = useState<DualChannelSample | null>(null);
+  const [sampleCount, setSampleCount] = useState(0);
+  const lastSeenRef = useRef(0);
+  const lastUpdateRef = useRef(0);
+
+  useEffect(() => {
+    let rafId = 0;
+
+    function tick() {
+      rafId = requestAnimationFrame(tick);
+
+      const count = getSampleCount();
+      if (count === lastSeenRef.current) return;
+      lastSeenRef.current = count;
+
+      if (count === 0) {
+        setLatest(null);
+        setSampleCount(0);
+        return;
+      }
+
+      const now = performance.now();
+      if (now - lastUpdateRef.current < DISPLAY_THROTTLE) return;
+      lastUpdateRef.current = now;
+
+      setLatest(getLatest());
+      setSampleCount(count);
+    }
+
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, []);
 
   if (status === 'disconnected') {
     return (

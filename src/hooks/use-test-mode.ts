@@ -7,7 +7,7 @@
 
 import { useCallback, useRef } from 'react';
 import { useDeviceStore } from '@/store/device-store.js';
-import { useMeasurementStore } from '@/store/measurement-store.js';
+import { pushSample, clearMeasurements } from '@/store/measurement-store.js';
 import { useLog } from './use-log.js';
 import type { DualChannelSample } from '@/types/measurement.js';
 
@@ -20,7 +20,6 @@ export function useTestMode() {
   const startTimeRef = useRef(0);
 
   const { status, setStatus, setConfig, reset: resetDevice } = useDeviceStore();
-  const { pushSample, clear: clearMeasurements } = useMeasurementStore();
   const log = useLog();
 
   const start = useCallback(() => {
@@ -56,7 +55,7 @@ export function useTestMode() {
 
       pushSample(sample);
     }, 10); // 100Hz
-  }, [setConfig, setStatus, clearMeasurements, pushSample, log]);
+  }, [setConfig, setStatus, log]);
 
   const stop = useCallback(() => {
     if (timerRef.current) {
@@ -66,7 +65,7 @@ export function useTestMode() {
     resetDevice();
     clearMeasurements();
     log('Test mode stopped', 'warning');
-  }, [resetDevice, clearMeasurements, log]);
+  }, [resetDevice, log]);
 
   const toggle = useCallback(() => {
     if (status === 'test-mode') stop();

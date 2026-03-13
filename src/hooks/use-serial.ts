@@ -14,7 +14,7 @@ import { decodeRealtimeData, deriveMeasurement } from '@/protocol/codec.js';
 import { buildStopFrame } from '@/protocol/frame-builder.js';
 import { FRAME_TYPE } from '@/types/protocol.js';
 import { useDeviceStore } from '@/store/device-store.js';
-import { useMeasurementStore } from '@/store/measurement-store.js';
+import { pushSample, clearMeasurements } from '@/store/measurement-store.js';
 import { useLog } from './use-log.js';
 
 // ============================================================
@@ -26,8 +26,6 @@ export function useSerial() {
   const stopReadingRef = useRef<(() => void) | null>(null);
 
   const { setStatus, setConfig, setError, reset, config } = useDeviceStore();
-  const pushSample = useMeasurementStore((s) => s.pushSample);
-  const clearMeasurements = useMeasurementStore((s) => s.clear);
   const log = useLog();
 
   const connect = useCallback(async () => {
@@ -74,7 +72,7 @@ export function useSerial() {
       log(`Connection failed: ${msg}`, 'error');
       await cleanup();
     }
-  }, [setStatus, setConfig, setError, pushSample, log]);
+  }, [setStatus, setConfig, setError, log]);
 
   const disconnect = useCallback(async () => {
     log('Disconnecting...', 'warning');
@@ -82,7 +80,7 @@ export function useSerial() {
     reset();
     clearMeasurements();
     log('Disconnected', 'warning');
-  }, [reset, clearMeasurements, log]);
+  }, [reset, log]);
 
   const cleanup = async () => {
     stopReadingRef.current?.();
