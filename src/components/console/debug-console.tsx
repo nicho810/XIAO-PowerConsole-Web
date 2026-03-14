@@ -21,11 +21,12 @@ export function DebugConsole() {
   const [collapsed, setCollapsed] = useState(false);
   const entries = useLogStore((s) => s.entries);
   const clear = useLogStore((s) => s.clear);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // 自动滚动到底部
+  // 仅在控制台自身容器内滚动到底部，不影响父级滚动区
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [entries.length]);
 
   return (
@@ -60,7 +61,7 @@ export function DebugConsole() {
         </div>
       </div>
       {!collapsed && (
-        <div className="max-h-60 overflow-y-auto px-3 py-2 data-value text-xs space-y-0.5">
+        <div ref={scrollRef} className="max-h-60 overflow-y-auto px-3 py-2 data-value text-xs space-y-0.5">
           {entries.length === 0 && (
             <p className="text-[hsl(var(--muted-foreground))]">No messages</p>
           )}
@@ -69,7 +70,6 @@ export function DebugConsole() {
               <span className="opacity-60">[{e.time}]</span> {e.message}
             </div>
           ))}
-          <div ref={bottomRef} />
         </div>
       )}
     </div>
