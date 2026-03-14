@@ -1,5 +1,5 @@
 /**
- * [INPUT]:  依赖 react, lucide-react, hooks/use-log
+ * [INPUT]:  依赖 react, lucide-react, hooks/use-log, hooks/use-locale
  * [OUTPUT]: 对外提供 DebugConsole 组件 — 可折叠日志面板
  * [POS]:    console/ 的调试日志显示，被 Sidebar 消费
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
@@ -8,6 +8,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Terminal, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLogStore, type LogLevel } from '@/hooks/use-log.js';
+import { useLocale } from '@/hooks/use-locale.js';
 
 // ── 日志级别颜色 — 统一 CSS 变量 ────────────────────────────────
 const LEVEL_CLASS: Record<LogLevel, string> = {
@@ -20,7 +21,8 @@ const LEVEL_CLASS: Record<LogLevel, string> = {
 export function DebugConsole() {
   const [collapsed, setCollapsed] = useState(false);
   const entries = useLogStore((s) => s.entries);
-  const clear = useLogStore((s) => s.clear);
+  const clear   = useLogStore((s) => s.clear);
+  const { t }   = useLocale();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // 仅在控制台自身容器内滚动到底部，不影响父级滚动区
@@ -34,7 +36,7 @@ export function DebugConsole() {
       <div className="flex items-center justify-between px-4 py-2 border-b border-[hsl(var(--border))]">
         <div className="flex items-center gap-2">
           <Terminal className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Debug Console</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">{t.debugConsole}</h3>
           {entries.length > 0 && (
             <span className="text-[10px] rounded-full bg-[hsl(var(--muted))] px-1.5 py-0.5 text-[hsl(var(--muted-foreground))]">
               {entries.length}
@@ -63,7 +65,7 @@ export function DebugConsole() {
       {!collapsed && (
         <div ref={scrollRef} className="max-h-60 overflow-y-auto px-3 py-2 data-value text-xs space-y-0.5">
           {entries.length === 0 && (
-            <p className="text-[hsl(var(--muted-foreground))]">No messages</p>
+            <p className="text-[hsl(var(--muted-foreground))]">{t.noMessages}</p>
           )}
           {entries.map((e) => (
             <div key={e.id} className={LEVEL_CLASS[e.level]}>

@@ -13,11 +13,12 @@ src/
 ├── protocol/             — XPB 二进制协议: CRC, 解析, 构建, 解码 (4 文件)
 ├── serial/               — Web Serial API 封装 + 三阶段握手 (2 文件)
 ├── store/                — Zustand 状态: 设备连接 + 环形缓冲区 + 能量积分 (3 文件)
-├── hooks/                — React Hooks: 串口, 主题, 日志 (3 文件)
+├── hooks/                — React Hooks: 串口, 主题, 日志, 语言 (4 文件)
+├── i18n/                 — 多语言字典: 10 种语言 key-value 翻译 (1 文件)
 ├── lib/                  — 工具: RingBuffer + 格式化函数 (2 文件)
 │
 └── components/
-    ├── layout/           — Sidebar (含标题+主题切换) + MainContent (2 文件)
+    ├── layout/           — Sidebar (含标题+主题切换+语言选择) + MainContent (2 文件)
     ├── connection/       — 连接面板 + 状态指示 + 设备信息(含能量统计+骨架屏) (3 文件)
     ├── charts/           — ECharts 实时折线图: 电压/电流/功率 (4 文件)
     └── console/          — 可折叠调试日志 (1 文件)
