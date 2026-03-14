@@ -60,16 +60,6 @@ function SkeletonChannelSection() {
           <SkeletonBar w="w-14" />
           <SkeletonBar w="w-10" />
         </div>
-        <div className="grid grid-cols-2 gap-1.5 mb-2.5">
-          <div className="rounded-md bg-[hsl(var(--muted))] px-2.5 py-1.5">
-            <div className="flex justify-center mb-1"><SkeletonBar w="w-10" /></div>
-            <div className="flex justify-center"><SkeletonBar w="w-14" /></div>
-          </div>
-          <div className="rounded-md bg-[hsl(var(--muted))] px-2.5 py-1.5">
-            <div className="flex justify-center mb-1"><SkeletonBar w="w-10" /></div>
-            <div className="flex justify-center"><SkeletonBar w="w-14" /></div>
-          </div>
-        </div>
         <div className="rounded-md bg-[hsl(var(--muted))] px-2.5 py-2 mb-1.5">
           <div className="mb-1"><SkeletonBar w="w-10" /></div>
           <div className="mb-1"><SkeletonBar w="w-24" /></div>
@@ -173,28 +163,6 @@ function ChannelBlock({ label, channel, energy, onReset, voltageColor, currentCo
             <RotateCcw className="w-2.5 h-2.5" />
             Reset
           </button>
-        </div>
-
-        {/* 实时 V / I (小版) */}
-        <div className="grid grid-cols-2 gap-1.5 mb-2.5">
-          <div className="rounded-md bg-[hsl(var(--muted))] px-2.5 py-1.5 text-center">
-            <div className="flex items-center justify-center gap-1 mb-0.5">
-              <span className={`inline-block w-1.5 h-1.5 rounded-full bg-[hsl(var(${voltageColor}))]`} />
-              <span className="text-[9px] uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Voltage</span>
-            </div>
-            <span className="data-value text-xs font-semibold tabular-nums">
-              {channel ? formatVoltage(channel.busVoltage) : '—'}
-            </span>
-          </div>
-          <div className="rounded-md bg-[hsl(var(--muted))] px-2.5 py-1.5 text-center">
-            <div className="flex items-center justify-center gap-1 mb-0.5">
-              <span className={`inline-block w-1.5 h-1.5 rounded-full bg-[hsl(var(${currentColor}))]`} />
-              <span className="text-[9px] uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Current</span>
-            </div>
-            <span className="data-value text-xs font-semibold tabular-nums">
-              {channel ? formatCurrent(channel.current) : '—'}
-            </span>
-          </div>
         </div>
 
         {/* 累积电荷 */}
