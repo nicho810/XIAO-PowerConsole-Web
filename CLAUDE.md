@@ -18,7 +18,7 @@ src/
 │
 └── components/
     ├── layout/           — Sidebar (含标题+主题切换) + MainContent (2 文件)
-    ├── connection/       — 连接面板 + 状态指示 + 设备信息 + 能量统计 (4 文件)
+    ├── connection/       — 连接面板 + 状态指示 + 设备信息(含能量统计+骨架屏) (3 文件)
     ├── charts/           — ECharts 实时折线图: 电压/电流/功率 (4 文件)
     └── console/          — 可折叠调试日志 (1 文件)
 ```

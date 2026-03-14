@@ -6,12 +6,13 @@
 ## 成员清单
 - `connection-panel.tsx`: 连接按钮组 (Connect/Disconnect)，消费 useSerial hook
 - `connection-status.tsx`: 状态指示器 (颜色点 + 脉冲动画)，根据 status 枚举查表渲染
-- `device-info.tsx`: 设备配置行 + rAF 轮询 10Hz 实时 V/I/P 三格网格，零 Zustand 订阅
-- `energy-stats.tsx`: 双通道电量统计面板，rAF 轮询 15Hz，显示实时 V/I + 累积 µAh/mAh + 计时 + Reset 按钮
+- `device-info.tsx`: 合并面板 — 设备配置 + 实时 V/I/P + 能量统计(µAh/mAh/elapsed/Reset)；
+  未连接时显示 animate-pulse 骨架屏预示完整布局；rAF 10Hz 轮询
 
 ## 架构决策
-- 所有实时数值组件均用 rAF + DISPLAY_THROTTLE 节流，不依赖 Zustand 订阅
-- energy-stats 在 status=disconnected 时返回 null，与 device-info 保持一致
-- Reset 按钮立即调用 resetA/B 并强制刷新 snapshot 状态，无需等待下一帧
+- 未连接时渲染骨架屏而非隐藏面板，保持侧栏布局稳定、减少跳动
+- 骨架屏结构与实际数据布局一一对应，让用户预期内容形状
+- Reset 按钮立即调用 resetA/B 并强制刷新 snapshot，无需等待下一帧
+- elapsed 每帧刷新（即使无新样本），保证计时器视觉连续
 
 [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md

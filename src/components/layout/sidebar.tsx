@@ -9,7 +9,6 @@ import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/hooks/use-theme.js';
 import { ConnectionPanel } from '@/components/connection/connection-panel.js';
 import { DeviceInfo } from '@/components/connection/device-info.js';
-import { EnergyStats } from '@/components/connection/energy-stats.js';
 import { DebugConsole } from '@/components/console/debug-console.js';
 
 export function Sidebar() {
@@ -36,7 +35,6 @@ export function Sidebar() {
 
       <ConnectionPanel />
       <DeviceInfo />
-      <EnergyStats />
       <DebugConsole />
     </aside>
   );
