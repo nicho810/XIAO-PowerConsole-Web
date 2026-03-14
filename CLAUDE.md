@@ -6,7 +6,7 @@ React 19 + TypeScript 5.8 + Vite 6 + Tailwind 4 + Zustand 5 + ECharts 5
 ```
 src/
 ├── main.tsx              — Vite 入口，挂载 React
-├── app.tsx               — App Shell，可拖拽双栏布局 (左信息区 3:9 右图表区)
+├── app.tsx               — App Shell，可拖拽双栏布局 (左信息区 4:8 右图表区)
 ├── index.css             — Tailwind 指令 + CSS 变量（亮/暗主题）
 │
 ├── types/                — 纯类型定义，零运行时 (2 文件)

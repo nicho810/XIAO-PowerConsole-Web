@@ -10,21 +10,15 @@ import { Sidebar } from './components/layout/sidebar.js';
 import { MainContent } from './components/layout/main-content.js';
 
 // ============================================================
-//  App Shell — 可拖拽双栏布局 (左信息区 3:9 右图表区)
+//  App Shell — 可拖拽双栏布局 (左信息区 4:8 右图表区)
 // ============================================================
 
-/** 左栏百分比下限 / 上限 */
-const MIN_LEFT = 15;
-const MAX_LEFT = 50;
-
-/** 左栏最小像素宽度 — 保证内容不被压碎 */
-const MIN_LEFT_PX = 280;
-
-/** 3:12 = 25% */
-const DEFAULT_LEFT = 25;
+/** 左栏像素下限 / 上限（上限为容器宽度的 50%） */
+const MIN_LEFT_PX = 430;
+const MAX_LEFT_PCT = 50;
 
 export function App() {
-  const [leftPct, setLeftPct] = useState(DEFAULT_LEFT);
+  const [leftPx, setLeftPx] = useState(MIN_LEFT_PX);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // ── 拖拽分隔条 ────────────────────────────────────────────
@@ -39,9 +33,9 @@ export function App() {
     const onPointerMove = (ev: PointerEvent) => {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
-      const pct = ((ev.clientX - rect.left) / rect.width) * 100;
-      const minPct = Math.max(MIN_LEFT, (MIN_LEFT_PX / rect.width) * 100);
-      setLeftPct(Math.min(Math.max(pct, minPct), MAX_LEFT));
+      const px = ev.clientX - rect.left;
+      const maxPx = rect.width * MAX_LEFT_PCT / 100;
+      setLeftPx(Math.min(Math.max(px, MIN_LEFT_PX), maxPx));
     };
 
     const onPointerUp = () => {
@@ -61,7 +55,7 @@ export function App() {
       {/* 左 — 信息区 */}
       <div
         className="overflow-y-auto p-5 flex-shrink-0"
-        style={{ width: `${leftPct}%`, minWidth: MIN_LEFT_PX }}
+        style={{ width: leftPx }}
       >
         <Sidebar />
       </div>
