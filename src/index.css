@@ -36,13 +36,13 @@
   --status-test:       217 91% 60%;
   --status-error:      0 84.2% 60.2%;
 
-  /* 图表系列色 */
-  --chart-voltage-a:   217 91% 60%;
-  --chart-voltage-b:   25 95% 53%;
-  --chart-current-a:   142 71% 45%;
-  --chart-current-b:   271 91% 65%;
-  --chart-power-a:     0 84% 60%;
-  --chart-power-b:     48 96% 53%;
+  /* 图表系列色 — 低饱和互补配对，哑光仪表感 */
+  --chart-voltage-a:   220 42% 55%;
+  --chart-voltage-b:   38 40% 54%;
+  --chart-current-a:   152 38% 46%;
+  --chart-current-b:   322 36% 56%;
+  --chart-power-a:     268 36% 56%;
+  --chart-power-b:     82 34% 48%;
 
   /* 按钮语义色 */
   --btn-success:            142.1 76.2% 36.3%;
@@ -81,13 +81,13 @@
   --status-test:       217 91% 65%;
   --status-error:      0 62.8% 50%;
 
-  /* 图表系列色 */
-  --chart-voltage-a:   217 91% 65%;
-  --chart-voltage-b:   25 95% 58%;
-  --chart-current-a:   142 71% 50%;
-  --chart-current-b:   271 91% 70%;
-  --chart-power-a:     0 84% 65%;
-  --chart-power-b:     48 96% 58%;
+  /* 图表系列色 — 暗色模式提亮 +10% */
+  --chart-voltage-a:   220 42% 65%;
+  --chart-voltage-b:   38 40% 64%;
+  --chart-current-a:   152 38% 56%;
+  --chart-current-b:   322 36% 65%;
+  --chart-power-a:     268 36% 66%;
+  --chart-power-b:     82 34% 58%;
 
   /* 按钮语义色 */
   --btn-success:            142.1 70.6% 45.3%;

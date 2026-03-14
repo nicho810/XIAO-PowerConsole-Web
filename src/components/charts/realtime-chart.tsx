@@ -1,16 +1,16 @@
 /**
- * [INPUT]:  依赖 react, echarts, hooks/use-theme, lib/ring-buffer
+ * [INPUT]:  依赖 react, echarts, lib/ring-buffer（主题通过 MutationObserver 直读 DOM）
  * [OUTPUT]: 对外提供 RealtimeChart + BufferSeriesConfig — 命令式 ECharts 实时折线图
  * [POS]:    charts/ 的基础图表组件，被 voltage/current/power chart 消费
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
-import { useTheme } from '@/hooks/use-theme.js';
+import LinearGradient from 'zrender/lib/graphic/LinearGradient.js';
 import type { RingBuffer } from '@/lib/ring-buffer.js';
 
 // ── ECharts 按需注册 ───────────────────────────────────────────
@@ -52,6 +52,12 @@ function resolveHsl(cssVar: string): string {
   return `hsl(${raw})`;
 }
 
+/** CSS 变量 → hsla() 字符串，用于面积渐变等半透明场景 */
+function resolveHsla(cssVar: string, alpha: number): string {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(cssVar).trim();
+  return `hsl(${raw} / ${alpha})`;
+}
+
 /** 时间戳 → "M:SS.f" 标签 */
 function formatTimestamp(ms: number): string {
   const totalSec = ms / 1000;
@@ -66,7 +72,18 @@ export function RealtimeChart({
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
-  const { theme } = useTheme();
+
+  // ── 直接监听 DOM class 变化，避免独立 state 实例不同步问题 ──
+  const [theme, setTheme] = useState<'light' | 'dark'>(() =>
+    document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+  );
+  useEffect(() => {
+    const obs = new MutationObserver(() =>
+      setTheme(document.documentElement.classList.contains('dark') ? 'dark' : 'light')
+    );
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
 
   // ── Ref 桥接 — 让 rAF 闭包读到最新值，无需重启循环 ────────
   const themeRef = useRef(theme);
@@ -78,7 +95,7 @@ export function RealtimeChart({
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const chart = echarts.init(containerRef.current, theme === 'dark' ? 'dark' : undefined);
+    const chart = echarts.init(containerRef.current);
     chartRef.current = chart;
 
     const observer = new ResizeObserver(() => chart.resize());
@@ -97,6 +114,7 @@ export function RealtimeChart({
     let lastSeen = 0;
     let lastUpdate = 0;
     let currentChart: echarts.ECharts | null = null;
+    let lastTheme = '';
 
     // ── 预分配读取缓冲区 ──────────────────────────────────────
     const cap = timestampBuffer.capacity;
@@ -108,9 +126,11 @@ export function RealtimeChart({
       const chart = chartRef.current;
       if (!chart) { currentChart = null; return; }
 
-      // ── 检测图表实例变化（主题切换时重建）─────────────────
-      const needsInit = chart !== currentChart;
+      // ── 检测图表实例变化 或 主题切换 ──────────────────────
+      const t = themeRef.current;
+      const needsInit = chart !== currentChart || t !== lastTheme;
       currentChart = chart;
+      lastTheme = t;
 
       const count = getSampleCount();
 
@@ -168,15 +188,17 @@ export function RealtimeChart({
 
       // ── setOption: 首次 replace 建图，后续 merge 推数据 ────
       if (needsInit) {
-        const t = themeRef.current;
         const isDark = t === 'dark';
+        const mutedFg = resolveHsl('--muted-foreground');
+        const borderClr = resolveHsl('--border');
+
         chart.setOption({
           backgroundColor: 'transparent',
-          grid: { left: 50, right: 16, top: 8, bottom: 24 },
+          grid: { left: 50, right: 16, top: 28, bottom: 28 },
           tooltip: {
             trigger: 'axis',
-            backgroundColor: isDark ? '#1e293b' : '#fff',
-            borderColor: isDark ? '#334155' : '#e2e8f0',
+            backgroundColor: isDark ? 'hsl(222 84% 6% / 0.85)' : 'hsl(0 0% 100% / 0.85)',
+            borderColor: borderClr,
             borderRadius: 8,
             padding: [8, 12],
             textStyle: {
@@ -184,29 +206,38 @@ export function RealtimeChart({
               fontSize: 11,
               fontFamily: "ui-monospace, 'SF Mono', 'Cascadia Code', monospace",
             },
-            extraCssText: 'box-shadow: 0 4px 12px hsl(0 0% 0% / 0.15);',
+            extraCssText: 'backdrop-filter: blur(8px); box-shadow: 0 4px 16px hsl(0 0% 0% / 0.2);',
+            axisPointer: { type: 'cross', crossStyle: { color: mutedFg, width: 0.8 } },
           },
           legend: {
             data: sc.map((s) => s.name),
-            textStyle: { color: isDark ? '#94a3b8' : '#64748b', fontSize: 10 },
-            top: 0,
+            textStyle: { color: mutedFg, fontSize: 10 },
+            top: 4,
             right: 8,
-            itemWidth: 12,
-            itemHeight: 8,
+            icon: 'circle',
+            itemWidth: 11,
+            itemHeight: 11,
+            itemGap: 14,
           },
           xAxis: {
             type: 'category',
             data: labels,
-            axisLabel: { color: isDark ? '#94a3b8' : '#64748b', fontSize: 10 },
-            axisLine: { lineStyle: { color: isDark ? '#334155' : '#e2e8f0' } },
+            axisLabel: {
+              color: mutedFg,
+              fontSize: 10,
+              fontFamily: "ui-monospace, 'SF Mono', 'Cascadia Code', monospace",
+            },
+            axisLine: { lineStyle: { color: borderClr } },
             splitLine: { show: false },
           },
           yAxis: {
             type: 'value',
             name: unit,
-            nameTextStyle: { color: isDark ? '#94a3b8' : '#64748b', fontSize: 10 },
-            axisLabel: { color: isDark ? '#94a3b8' : '#64748b', fontSize: 10 },
-            splitLine: { lineStyle: { color: isDark ? '#1e293b' : '#f1f5f9' } },
+            nameTextStyle: { color: mutedFg, fontSize: 10 },
+            axisLabel: { color: mutedFg, fontSize: 10 },
+            axisLine: { show: false },
+            axisTick: { show: false },
+            splitLine: { lineStyle: { color: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.18)', type: 'dashed', width: 0.8 } },
           },
           series: sc.map((s, i) => {
             const resolved = resolveHsl(s.color);
@@ -215,8 +246,16 @@ export function RealtimeChart({
               type: 'line',
               data: seriesData[i].data,
               showSymbol: false,
-              lineStyle: { width: 1.5, color: resolved },
+              smooth: 0.35,
+              lineStyle: { width: 2, color: resolved, cap: 'round', join: 'round' },
               itemStyle: { color: resolved },
+              areaStyle: {
+                color: new LinearGradient(0, 0, 0, 1, [
+                  { offset: 0, color: resolveHsla(s.color, 0.2) },
+                  { offset: 1, color: resolveHsla(s.color, 0) },
+                ]),
+              },
+              emphasis: { disabled: true },
               animation: false,
             };
           }),
@@ -238,8 +277,8 @@ export function RealtimeChart({
 
   return (
     <div className="flex-1 min-h-0 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] card-elevated overflow-hidden flex flex-col">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-[hsl(var(--border))]">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">{title}</h3>
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-[hsl(var(--border))]">
+        <h3 className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--muted-foreground))]">{title}</h3>
         <span className="text-[10px] text-[hsl(var(--muted-foreground))] opacity-60">{unit}</span>
       </div>
       <div ref={containerRef} className="flex-1 min-h-0" />

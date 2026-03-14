@@ -62,7 +62,7 @@ export function App() {
 
       {/* 拖拽条 — 加宽 + 三圆点手柄 + 透明热区 */}
       <div
-        className="relative w-1.5 flex-shrink-0 bg-[hsl(var(--border))] hover:bg-[hsl(var(--primary))] cursor-col-resize transition-colors group before:content-[''] before:absolute before:inset-y-0 before:-left-1.5 before:-right-1.5"
+        className="relative w-px flex-shrink-0 bg-[hsl(var(--border))] hover:bg-[hsl(var(--primary))] cursor-col-resize transition-colors group before:content-[''] before:absolute before:inset-y-0 before:-left-2 before:-right-2"
         onPointerDown={onPointerDown}
       >
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
