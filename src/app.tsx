@@ -54,7 +54,7 @@ export function App() {
 
       {/* 左 — 信息区 */}
       <div
-        className="overflow-y-auto p-5 flex-shrink-0"
+        className="flex flex-col flex-shrink-0 overflow-hidden"
         style={{ width: leftPx }}
       >
         <Sidebar />
