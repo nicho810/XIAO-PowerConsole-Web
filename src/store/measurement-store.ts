@@ -1,6 +1,7 @@
 /**
  * [INPUT]:  依赖 @/lib/ring-buffer 的 RingBuffer，
- *           依赖 @/types/measurement 的 DualChannelSample
+ *           依赖 @/types/measurement 的 DualChannelSample，
+ *           依赖 @/store/energy-store 的 integrateA/B/clearEnergyTimestamps
  * [OUTPUT]: 对外提供 pushSample / clearMeasurements / getSampleCount / getLatest
  *           + buffers 环形缓冲区引用
  * [POS]:    store/ 的测量数据管理，100Hz 热路径零 React 零 Zustand
@@ -9,6 +10,7 @@
 
 import { RingBuffer } from '@/lib/ring-buffer.js';
 import type { DualChannelSample } from '@/types/measurement.js';
+import { integrateA, integrateB, clearEnergyTimestamps } from '@/store/energy-store.js';
 
 // ============================================================
 //  缓冲区容量: 3000 = 30s @ 100Hz
@@ -59,6 +61,9 @@ export function pushSample(sample: DualChannelSample): void {
   buffers.powerB.push(sample.channelB.power);
   buffers.timestamp.push(sample.channelA.timestamp);
 
+  integrateA(sample.channelA.current, sample.channelA.timestamp);
+  integrateB(sample.channelB.current, sample.channelB.timestamp);
+
   _latest = sample;
   _sampleCount++;
 }
@@ -66,6 +71,7 @@ export function pushSample(sample: DualChannelSample): void {
 /** 清空所有缓冲区和状态 */
 export function clearMeasurements(): void {
   Object.values(buffers).forEach((b) => b.clear());
+  clearEnergyTimestamps();
   _latest = null;
   _sampleCount = 0;
 }

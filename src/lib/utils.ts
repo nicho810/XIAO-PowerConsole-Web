@@ -24,6 +24,16 @@ export function formatPower(w: number): string {
   return `${(w * 1000).toFixed(2)} mW`;
 }
 
+/** 经过时间格式化: ms → "mm:ss" 或 "h:mm:ss" */
+export function formatElapsed(ms: number): string {
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
 // ============================================================
 //  样式工具
 // ============================================================

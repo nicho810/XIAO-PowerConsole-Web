@@ -25,7 +25,7 @@ export function useSerial() {
   const serialRef = useRef<SerialConnection | null>(null);
   const stopReadingRef = useRef<(() => void) | null>(null);
 
-  const { setStatus, setConfig, setError, reset, config } = useDeviceStore();
+  const { setStatus, setConfig, setError, reset } = useDeviceStore();
   const log = useLog();
 
   const connect = useCallback(async () => {

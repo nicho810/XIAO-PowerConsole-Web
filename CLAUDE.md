@@ -12,13 +12,13 @@ src/
 ├── types/                — 纯类型定义，零运行时 (2 文件)
 ├── protocol/             — XPB 二进制协议: CRC, 解析, 构建, 解码 (4 文件)
 ├── serial/               — Web Serial API 封装 + 三阶段握手 (2 文件)
-├── store/                — Zustand 状态: 设备连接 + 环形缓冲区 (2 文件)
+├── store/                — Zustand 状态: 设备连接 + 环形缓冲区 + 能量积分 (3 文件)
 ├── hooks/                — React Hooks: 串口, 主题, 日志 (3 文件)
 ├── lib/                  — 工具: RingBuffer + 格式化函数 (2 文件)
 │
 └── components/
     ├── layout/           — Sidebar (含标题+主题切换) + MainContent (2 文件)
-    ├── connection/       — 连接面板 + 状态指示 + 设备信息 (3 文件)
+    ├── connection/       — 连接面板 + 状态指示 + 设备信息 + 能量统计 (4 文件)
     ├── charts/           — ECharts 实时折线图: 电压/电流/功率 (4 文件)
     └── console/          — 可折叠调试日志 (1 文件)
 ```
@@ -34,7 +34,9 @@ src/
 ```
 USB Device → Web Serial (Uint8Array) → FrameParser (字节状态机)
   → codec 解码 → deriveMeasurement 派生 → RingBuffer × 7
+  → energy-store.integrateA/B (I×dt 梯形积分 → µAh)
   → 图表内嵌 rAF 15fps 直读 buffer → ECharts 命令式更新（零 React 渲染）
+  → EnergyStats rAF 15fps 轮询 snapshotA/B → React setState
 ```
 
 ## 架构决策

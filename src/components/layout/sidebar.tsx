@@ -1,7 +1,7 @@
 /**
  * [INPUT]:  依赖 react, lucide-react, hooks/use-theme, connection 组件, console 组件
  * [OUTPUT]: 对外提供 Sidebar 组件 — 左面板容器 (含标题栏 + 主题切换)
- * [POS]:    layout/ 的左侧面板，包含标题、主题切换、连接控制和调试控制台
+ * [POS]:    layout/ 的左侧面板，包含标题、主题切换、连接控制、设备信息、能量统计和调试控制台
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */
 
@@ -9,6 +9,7 @@ import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/hooks/use-theme.js';
 import { ConnectionPanel } from '@/components/connection/connection-panel.js';
 import { DeviceInfo } from '@/components/connection/device-info.js';
+import { EnergyStats } from '@/components/connection/energy-stats.js';
 import { DebugConsole } from '@/components/console/debug-console.js';
 
 export function Sidebar() {
@@ -35,6 +36,7 @@ export function Sidebar() {
 
       <ConnectionPanel />
       <DeviceInfo />
+      <EnergyStats />
       <DebugConsole />
     </aside>
   );
