@@ -98,7 +98,7 @@ export function Sidebar() {
             />
             <div>
               <h1 className="text-2xl font-bold tracking-tight">XIAO</h1>
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">PowerConsole</p>
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">XPB Web Console</p>
             </div>
           </div>
 
