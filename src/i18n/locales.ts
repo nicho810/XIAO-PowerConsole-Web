@@ -55,7 +55,7 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   'ja':    '日本語',
   'ko':    '한국어',
   'vi':    'Tiếng Việt',
-  'ms':    'Bahasa Melayu',
+  'ms':    'Bahasa',
   'de':    'Deutsch',
   'fr':    'Français',
   'it':    'Italiano',

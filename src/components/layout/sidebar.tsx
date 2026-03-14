@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { Sun, Moon, Globe, ChevronDown } from 'lucide-react';
+import { Sun, Moon, Globe, ChevronDown, Github } from 'lucide-react';
 import { useTheme } from '@/hooks/use-theme.js';
 import { useLocale } from '@/hooks/use-locale.js';
 import type { Locale } from '@/i18n/locales.js';
@@ -102,8 +102,17 @@ export function Sidebar() {
             </div>
           </div>
 
-          {/* ── 工具栏: 主题 + 语言 ──────────────────────── */}
+          {/* ── 工具栏: GitHub + 主题 + 语言 ────────────────── */}
           <div className="flex items-center gap-2">
+            <a
+              href="https://github.com/nicho810/XIAO-PowerBread"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub Repository"
+              className="rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] p-2 hover:bg-[hsl(var(--muted))] transition"
+            >
+              <Github className="w-4 h-4" />
+            </a>
             <button
               onClick={toggle}
               aria-label={theme === 'light' ? t.switchToDark : t.switchToLight}
