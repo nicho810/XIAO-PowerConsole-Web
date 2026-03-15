@@ -204,7 +204,7 @@ export function RealtimeChart({
 
         chart.setOption({
           backgroundColor: 'transparent',
-          grid: { left: 50, right: 16, top: 28, bottom: 28 },
+          grid: { left: 50, right: 16, top: 28, bottom: 28, containLabel: false },
           tooltip: {
             trigger: 'axis',
             backgroundColor: isDark ? 'hsl(222 84% 6% / 0.85)' : 'hsl(0 0% 100% / 0.85)',
@@ -237,9 +237,11 @@ export function RealtimeChart({
               color: mutedFg,
               fontSize: 10,
               fontFamily: "ui-monospace, 'SF Mono', 'Cascadia Code', monospace",
+              hideOverlap: true,
             },
             axisLine: { lineStyle: { color: borderClr } },
             splitLine: { show: false },
+            animation: false,
           },
           yAxis: {
             type: 'value',
@@ -248,11 +250,14 @@ export function RealtimeChart({
             axisLabel: {
               color: mutedFg,
               fontSize: 10,
+              width: 40,
+              overflow: 'truncate',
               formatter: (v: number) => formatValue(v, unit),
             },
             axisLine: { show: false },
             axisTick: { show: false },
             splitLine: { lineStyle: { color: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.18)', type: 'dashed', width: 0.8 } },
+            animation: false,
           },
           series: sc.map((s, i) => {
             const resolved = resolveHsl(s.color);
