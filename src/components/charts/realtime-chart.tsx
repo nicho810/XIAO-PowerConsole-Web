@@ -58,6 +58,16 @@ function resolveHsla(cssVar: string, alpha: number): string {
   return `hsl(${raw} / ${alpha})`;
 }
 
+/** 原始 SI 值 → 显示单位格式化 (V 不变, A→mA, W→mW) */
+function formatValue(raw: number, unit: string): string {
+  switch (unit) {
+    case 'mA': return (raw * 1000).toFixed(2);
+    case 'mW': return (raw * 1000).toFixed(2);
+    case 'V':  return raw.toFixed(3);
+    default:   return raw.toPrecision(4);
+  }
+}
+
 /** 时间戳 → "M:SS.f" 标签 */
 function formatTimestamp(ms: number): string {
   const totalSec = ms / 1000;
@@ -208,6 +218,7 @@ export function RealtimeChart({
             },
             extraCssText: 'backdrop-filter: blur(8px); box-shadow: 0 4px 16px hsl(0 0% 0% / 0.2);',
             axisPointer: { type: 'cross', crossStyle: { color: mutedFg, width: 0.8 } },
+            valueFormatter: (v) => `${formatValue(v as number, unit)} ${unit}`,
           },
           legend: {
             data: sc.map((s) => s.name),
@@ -234,7 +245,11 @@ export function RealtimeChart({
             type: 'value',
             name: unit,
             nameTextStyle: { color: mutedFg, fontSize: 10 },
-            axisLabel: { color: mutedFg, fontSize: 10 },
+            axisLabel: {
+              color: mutedFg,
+              fontSize: 10,
+              formatter: (v: number) => formatValue(v, unit),
+            },
             axisLine: { show: false },
             axisTick: { show: false },
             splitLine: { lineStyle: { color: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.18)', type: 'dashed', width: 0.8 } },
