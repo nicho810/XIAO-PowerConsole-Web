@@ -10,8 +10,8 @@ import { useCallback, useRef } from 'react';
 import { SerialConnection } from '@/serial/serial-port.js';
 import { performHandshake } from '@/serial/handshake.js';
 import { FrameParser } from '@/protocol/frame-parser.js';
-import { decodeRealtimeData, deriveMeasurement } from '@/protocol/codec.js';
-import { buildStopFrame } from '@/protocol/frame-builder.js';
+import { decodeRealtimeData, decodeDeviceConfig, deriveMeasurement } from '@/protocol/codec.js';
+import { buildStopFrame, buildConfigAckFrame } from '@/protocol/frame-builder.js';
 import { FRAME_TYPE } from '@/types/protocol.js';
 import { useDeviceStore } from '@/store/device-store.js';
 import { pushSample, clearMeasurements } from '@/store/measurement-store.js';
@@ -51,14 +51,23 @@ export function useSerial() {
       setConfig(deviceConfig);
 
       // 启动数据流读取
+      // 设备可能在 STREAMING 中发起 re-handshake (协议 v1.2 Section 3.3)
+      // 收到 CONFIG 帧时自动回复 CONFIG_ACK，保持数据流不中断
+      let activeConfig = deviceConfig;
       const parser = new FrameParser();
       const stopReading = serial.startReading((chunk) => {
         const frames = parser.feedMany(chunk);
         for (const frame of frames) {
           if (frame.type === FRAME_TYPE.REALTIME_DATA) {
             const raw = decodeRealtimeData(frame.payload);
-            const sample = deriveMeasurement(raw, deviceConfig);
+            const sample = deriveMeasurement(raw, activeConfig);
             pushSample(sample);
+          } else if (frame.type === FRAME_TYPE.DEVICE_CONFIG) {
+            // 设备 re-handshake: 更新配置 + 回复 ACK
+            activeConfig = decodeDeviceConfig(frame.payload);
+            setConfig(activeConfig);
+            serial.write(buildConfigAckFrame()).catch(() => {});
+            log('Device re-handshake: config updated, CONFIG_ACK sent', 'warning');
           }
         }
       });
