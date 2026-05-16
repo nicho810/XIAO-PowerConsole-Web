@@ -218,7 +218,7 @@ export function RealtimeChart({
             },
             extraCssText: 'backdrop-filter: blur(8px); box-shadow: 0 4px 16px hsl(0 0% 0% / 0.2);',
             axisPointer: { type: 'cross', crossStyle: { color: mutedFg, width: 0.8 } },
-            valueFormatter: (v) => `${formatValue(v as number, unit)} ${unit}`,
+            valueFormatter: (v: number) => `${formatValue(v, unit)} ${unit}`,
           },
           legend: {
             data: sc.map((s) => s.name),
