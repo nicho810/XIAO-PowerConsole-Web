@@ -1,0 +1,16 @@
+{
+  // ─────────────────────────────────────────────────────────────────────────
+  // XIAO PowerConsole Web — Cloudflare Workers (assets-only, no runtime code)
+  // 纯静态 SPA：Vite 产物挂在 Workers Assets 上，404 回退到 index.html
+  // ─────────────────────────────────────────────────────────────────────────
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "xiao-powerconsole-web",
+  "compatibility_date": "2026-05-16",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+  "observability": {
+    "enabled": true
+  }
+}
