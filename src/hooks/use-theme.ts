@@ -1,7 +1,7 @@
 /**
  * [INPUT]:  依赖 react, localStorage
  * [OUTPUT]: 对外提供 useTheme hook — 暗/亮主题持久化切换
- * [POS]:    hooks/ 的主题管理，被 Sidebar 消费
+ * [POS]:    hooks/ 的主题管理，被 Header 消费；默认深色，尊重已保存偏好
  * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 
@@ -16,7 +16,7 @@ type Theme = 'light' | 'dark';
 function getInitialTheme(): Theme {
   const saved = localStorage.getItem('theme') as Theme | null;
   if (saved === 'light' || saved === 'dark') return saved;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'dark';
 }
 
 export function useTheme() {

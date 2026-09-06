@@ -47,14 +47,14 @@ export function DebugConsole() {
           <button
             onClick={clear}
             aria-label="Clear console"
-            className="p-1 rounded hover:bg-[hsl(var(--muted))] transition"
+            className="p-1 rounded hover:bg-[hsl(var(--muted))]"
           >
             <Trash2 className="w-3.5 h-3.5 text-[hsl(var(--muted-foreground))]" />
           </button>
           <button
             onClick={() => setCollapsed((p) => !p)}
             aria-label={collapsed ? 'Expand console' : 'Collapse console'}
-            className="p-1 rounded hover:bg-[hsl(var(--muted))] transition"
+            className="p-1 rounded hover:bg-[hsl(var(--muted))]"
           >
             {collapsed
               ? <ChevronDown className="w-3.5 h-3.5 text-[hsl(var(--muted-foreground))]" />

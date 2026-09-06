@@ -1,6 +1,6 @@
 /**
  * [INPUT]: React、显示快照/电荷 store、useLocale 与物理量格式化工具
- * [OUTPUT]: MeasurementSummary，双通道实时读数和紧凑电荷统计
+ * [OUTPUT]: MeasurementSummary，以功率为主的双通道读数和电荷统计
  * [POS]: connection/ 的主要读数视图，由 MainContent 放在图表之前
  * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
@@ -33,25 +33,29 @@ export function MeasurementSummary() {
   const { t } = useLocale();
   const channels = [reading.latest?.channelA, reading.latest?.channelB];
   return (
-    <section aria-label={`${t.channelA} / ${t.channelB}`} className="grid grid-cols-1 xl:grid-cols-2 gap-4 shrink-0">
+    <section aria-label={`${t.channelA} / ${t.channelB}`} className="grid grid-cols-1 md:grid-cols-2 gap-4 shrink-0">
       {channels.map((channel, index) => {
         const label = index === 0 ? t.channelA : t.channelB;
         const color = index === 0 ? '--chart-voltage-a' : '--chart-voltage-b';
         const charge = reading.charge[index];
+        const [power, powerUnit] = channel ? formatPower(channel.power).split(' ') : ['—', 'mW'];
         const metrics = [
           [t.voltage, channel ? formatVoltage(channel.busVoltage) : '—'],
           [t.current, channel ? formatCurrent(channel.current) : '—'],
-          [t.power, channel ? formatPower(channel.power) : '—'],
         ];
         return (
-          <article key={label} className="reading-card rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4">
+          <article key={label} style={{ '--channel-color': `hsl(var(${color}))` } as React.CSSProperties} className="reading-card rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4">
             <header className="flex items-center justify-between gap-3 mb-4">
               <h2 className="flex items-center gap-2 text-sm font-semibold">
                 <span className="w-2 h-2 rounded-full" style={{ backgroundColor: `hsl(var(${color}))` }} />{label}
               </h2>
               <span className="text-[11px] text-[hsl(var(--muted-foreground))] data-value">{reading.count} {t.samples}</span>
             </header>
-            <dl className="grid grid-cols-3 gap-3">
+            <dl className="reading-power">
+              <dt>{t.power}</dt>
+              <dd className="data-value">{power}<span>{powerUnit}</span></dd>
+            </dl>
+            <dl className="reading-secondary grid grid-cols-2 gap-3">
               {metrics.map(([name, value]) => (
                 <div key={name} className="min-w-0">
                   <dt className="text-xs text-[hsl(var(--muted-foreground))] mb-1.5">{name}</dt>

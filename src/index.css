@@ -8,13 +8,13 @@
  * ================================================================ */
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+  --background: 220 25% 96%;
+  --foreground: 222 28% 14%;
   --card: 0 0% 100%;
   --card-foreground: 222.2 84% 4.9%;
   --popover: 0 0% 100%;
   --popover-foreground: 222.2 84% 4.9%;
-  --primary: 222.2 47.4% 11.2%;
+  --primary: 195 100% 30%;
   --primary-foreground: 210 40% 98%;
   --secondary: 210 40% 96.1%;
   --secondary-foreground: 222.2 47.4% 11.2%;
@@ -24,9 +24,9 @@
   --accent-foreground: 222.2 47.4% 11.2%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 222.2 84% 4.9%;
+  --border: 220 18% 85%;
+  --input: 220 18% 82%;
+  --ring: 195 100% 35%;
   --radius: 0.5rem;
   --success: 142.1 76.2% 36.3%;
   --warning: 38 92% 50%;
@@ -38,9 +38,9 @@
   --status-test:       217 91% 60%;
   --status-error:      0 84.2% 60.2%;
 
-  /* 图表系列色 — 低饱和互补配对，哑光仪表感 */
-  --chart-voltage-a:   220 42% 55%;
-  --chart-voltage-b:   38 40% 54%;
+  /* 图表系列色 — 青蓝与紫粉通道身份 */
+  --chart-voltage-a:   194.285714 100% 50.588235%;
+  --chart-voltage-b:   309.19708029 98.56115108% 72.74509804%;
   --chart-current-a: var(--chart-voltage-a);
   --chart-current-b: var(--chart-voltage-b);
   --chart-power-a: var(--chart-voltage-a);
@@ -51,28 +51,29 @@
   --btn-success-foreground: 0 0% 100%;
   --btn-danger:             0 84.2% 60.2%;
   --btn-danger-foreground:  0 0% 100%;
+  color-scheme: light;
 }
 
 .dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 210 40% 98%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
+  --background: 222 28% 5%;
+  --foreground: 220 25% 93%;
+  --card: 222 23% 9%;
+  --card-foreground: 220 25% 93%;
+  --popover: 222 23% 9%;
+  --popover-foreground: 220 25% 93%;
+  --primary: var(--chart-voltage-a);
+  --primary-foreground: 222 30% 6%;
+  --secondary: 222 18% 14%;
   --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
+  --muted: 222 18% 14%;
+  --muted-foreground: 220 13% 62%;
+  --accent: 222 18% 14%;
   --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
+  --destructive: 0 78% 65%;
   --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 212.7 26.8% 83.9%;
+  --border: 220 16% 19%;
+  --input: 220 16% 23%;
+  --ring: var(--chart-voltage-a);
   --success: 142.1 70.6% 45.3%;
   --warning: 38 92% 50%;
 
@@ -83,9 +84,9 @@
   --status-test:       217 91% 65%;
   --status-error:      0 62.8% 50%;
 
-  /* 图表系列色 — 暗色模式提亮 +10% */
-  --chart-voltage-a:   220 42% 65%;
-  --chart-voltage-b:   38 40% 64%;
+  /* 深色系列使用参考图的精确颜色 */
+  --chart-voltage-a:   194.285714 100% 50.588235%;
+  --chart-voltage-b:   309.19708029 98.56115108% 72.74509804%;
   --chart-current-a: var(--chart-voltage-a);
   --chart-current-b: var(--chart-voltage-b);
   --chart-power-a: var(--chart-voltage-a);
@@ -96,6 +97,7 @@
   --btn-success-foreground: 0 0% 100%;
   --btn-danger:             0 62.8% 50%;
   --btn-danger-foreground:  0 0% 100%;
+  color-scheme: dark;
 }
 
 /* ================================================================
@@ -128,15 +130,6 @@ body {
 .data-value {
   font-family: ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
   font-variant-numeric: tabular-nums;
-}
-
-/* 状态脉冲动画 */
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-.animate-pulse-dot {
-  animation: pulse-dot 1.5s ease-in-out infinite;
 }
 
 /* ================================================================
@@ -173,7 +166,8 @@ body {
 .reading-card { container-type: inline-size; }
 .reading-value { font-size: clamp(13px, 4.8cqi, 24px); overflow-wrap: anywhere; }
 @media (min-width: 1024px) {
-  .app-shell { height: 100dvh; flex-direction: row; overflow: hidden; }
+  .app-shell { height: 100dvh; overflow: hidden; }
+  .app-body { flex: 1; min-height: 0; display: flex; }
   .app-sidebar { width: var(--sidebar-width); }
   .app-workspace { overflow-y: auto; }
 }
@@ -194,3 +188,53 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="separator"]
 .monitor-button:disabled { opacity: 0.4; cursor: not-allowed; }
 .monitor-button[aria-pressed="true"] { border-color: hsl(var(--warning)); }
 select:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 3px; }
+
+/* -- 静态仪表主题：细边框、金属高光与通道辉光 -- */
+
+
+.app-header {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 16px; min-height: 78px; padding: 16px 24px; flex-shrink: 0;
+  border-bottom: 1px solid hsl(var(--border)); background: hsl(var(--card));
+}
+.brand-lockup { display: flex; align-items: center; gap: 12px; }
+.brand-lockup img { width: 36px; height: 36px; object-fit: contain; }
+.brand-lockup h1 { font-size: 18px; font-weight: 750; letter-spacing: -.6px; }
+.brand-lockup h1 span { font-weight: 450; margin-left: 6px; }
+.brand-lockup p { color: hsl(var(--muted-foreground)); font-size: 8px; letter-spacing: 2px; margin-top: 3px; }
+.header-tools { display: flex; align-items: center; gap: 8px; }
+.language-select { max-width: 140px; }
+.app-sidebar { background: hsl(var(--card) / .45); }
+.sidebar-label { font-size: 10px; letter-spacing: 1.7px; font-weight: 650; padding: 8px 2px 4px; }
+.sidebar-label span { display: block; font-size: 8px; letter-spacing: 1.2px; color: hsl(var(--muted-foreground)); margin-top: 6px; }
+.app-workspace {
+  background-image: radial-gradient(ellipse at 0 0, hsl(var(--chart-voltage-a) / .025), transparent 45%), radial-gradient(ellipse at 100% 0, hsl(var(--chart-voltage-b) / .025), transparent 45%);
+}
+.card-elevated, .reading-card, .monitor-panel {
+  background-image: linear-gradient(135deg, hsl(var(--foreground) / .025), transparent 60%);
+  box-shadow: inset 0 1px 0 hsl(var(--foreground) / .035), 0 8px 24px hsl(0 0% 0% / .035);
+}
+.dark .card-elevated, .dark .reading-card, .dark .monitor-panel {
+  box-shadow: inset 0 1px 0 hsl(0 0% 100% / .025), 0 8px 24px hsl(0 0% 0% / .15);
+}
+.reading-card {
+  position: relative; padding: 20px 22px 14px; overflow: hidden;
+  background-image: radial-gradient(ellipse at 100% 0, color-mix(in srgb, var(--channel-color) 7%, transparent), transparent 65%), linear-gradient(135deg, hsl(var(--foreground) / .025), transparent 60%);
+}
+.reading-card::before { content: ''; position: absolute; inset: 0 22px auto; height: 1px; background: linear-gradient(90deg, var(--channel-color), transparent 80%); }
+.reading-power dt { color: hsl(var(--muted-foreground)); font-size: 11px; }
+.reading-power dd { font-size: clamp(28px, 12cqi, 58px); line-height: 1.3; letter-spacing: -2px; font-weight: 550; overflow-wrap: anywhere; margin: 3px 0 18px; }
+.dark .reading-power dd { color: var(--channel-color); text-shadow: 0 0 25px color-mix(in srgb, var(--channel-color) 12%, transparent); }
+.reading-power dd span { margin-left: 9px; font-size: 14px; letter-spacing: 0; color: hsl(var(--muted-foreground)); font-weight: 400; }
+.reading-secondary { border-top: 1px solid hsl(var(--border)); padding-top: 12px; }
+.reading-secondary > div + div { border-left: 1px solid hsl(var(--border)); padding-left: 16px; }
+.reading-value { font-size: clamp(14px, 5cqi, 23px); font-weight: 500; }
+.chart-panel { min-height: 190px; }
+.monitor-panel { border-radius: 10px; }
+.monitor-button { background: hsl(var(--card)); border-radius: 6px; }
+.monitor-button:hover:not(:disabled) { border-color: hsl(var(--input)); }
+@media (max-width: 767px) {
+  .app-header { padding: 16px; gap: 12px; }
+  .brand-lockup h1 { font-size: 16px; }
+  .reading-card { padding: 18px; }
+}

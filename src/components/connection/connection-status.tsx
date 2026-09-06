@@ -9,17 +9,17 @@ import { useDeviceStore, type ConnectionStatus as Status } from '@/store/device-
 import { useLocale } from '@/hooks/use-locale.js';
 import type { LocaleStrings } from '@/i18n/locales.js';
 
-// ── 状态配置: CSS 变量色 + 脉冲动画 ────────────────────────────
-type StatusConfig = { color: string; pulse: boolean; label: string };
+// ── 状态配置: 静态 CSS 变量色 + 文字状态 ────────────────────────────
+type StatusConfig = { color: string; label: string };
 
 function buildConfig(t: LocaleStrings): Record<Status, StatusConfig> {
   return {
-    disconnecting: { color: 'bg-[hsl(var(--status-connecting))]', pulse: true, label: `${t.disconnect}…` },
-    disconnected: { color: 'bg-[hsl(var(--status-idle))]',       pulse: false, label: t.disconnected },
-    connecting:   { color: 'bg-[hsl(var(--status-connecting))]',  pulse: true,  label: t.connecting  },
-    handshaking:  { color: 'bg-[hsl(var(--status-connecting))]',  pulse: true,  label: t.handshaking },
-    streaming:    { color: 'bg-[hsl(var(--status-streaming))]',   pulse: true,  label: t.streaming   },
-    'test-mode':  { color: 'bg-[hsl(var(--status-test))]',       pulse: true,  label: t.testMode    },
+    disconnecting: { color: 'bg-[hsl(var(--status-connecting))]', label: `${t.disconnect}…` },
+    disconnected: { color: 'bg-[hsl(var(--status-idle))]',       label: t.disconnected },
+    connecting:   { color: 'bg-[hsl(var(--status-connecting))]',   label: t.connecting  },
+    handshaking:  { color: 'bg-[hsl(var(--status-connecting))]',   label: t.handshaking },
+    streaming:    { color: 'bg-[hsl(var(--status-streaming))]',    label: t.streaming   },
+    'test-mode':  { color: 'bg-[hsl(var(--status-test))]',        label: t.testMode    },
   };
 }
 
@@ -27,11 +27,11 @@ export function ConnectionStatus() {
   const status = useDeviceStore((s) => s.status);
   const error  = useDeviceStore((s) => s.error);
   const { t }  = useLocale();
-  const { color, pulse, label } = buildConfig(t)[status];
+  const { color, label } = buildConfig(t)[status];
 
   return (
     <div role="status" className="flex flex-wrap items-center gap-2">
-      <span className={`inline-block w-2.5 h-2.5 rounded-full ${color} ${pulse ? 'animate-pulse-dot' : ''} transition-colors`} />
+      <span className={`inline-block w-2.5 h-2.5 rounded-full ${color}`} />
       <span className="text-sm font-medium">{label}</span>
       {error && (
         <span className="text-xs text-[hsl(var(--status-error))] basis-full break-words" title={error}>

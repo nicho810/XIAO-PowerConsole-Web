@@ -13,12 +13,12 @@ import { PowerChart } from '@/components/charts/power-chart.js';
 export function MainContent() {
   return (
     <div className="min-h-full flex flex-col gap-4">
-      <MeasurementControls />
       <MeasurementSummary />
+      <MeasurementControls />
       <section className="flex-1 flex flex-col gap-4 min-h-[540px]">
-        <VoltageChart />
-        <CurrentChart />
         <PowerChart />
+        <CurrentChart />
+        <VoltageChart />
       </section>
     </div>
   );

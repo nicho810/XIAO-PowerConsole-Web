@@ -26,16 +26,16 @@ export function ConnectionPanel() {
         <h2 className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">{t.connection}</h2>
       </div>
       <ConnectionStatus />
-      <div className="flex gap-2 mt-3 min-w-0">
+      <div className="flex flex-wrap gap-2 mt-3 min-w-0">
         {/* Connect — 主要操作: primary 填充 */}
         <button
           onClick={connect}
           disabled={isActive || isBusy}
           aria-label={t.connect}
-          className="flex-1 min-w-0 flex items-center justify-center gap-1.5 rounded-md bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] px-3 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="flex-1 min-w-[110px] flex items-center justify-center gap-1.5 rounded-md bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] px-3 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plug className="w-3.5 h-3.5 shrink-0" />
-          <span className="truncate">{isBusy ? t.connecting : t.connect}</span>
+          <span className="break-words">{isBusy ? t.connecting : t.connect}</span>
         </button>
 
         {/* Disconnect — 次要操作: outline */}
@@ -43,10 +43,10 @@ export function ConnectionPanel() {
           onClick={disconnect}
           disabled={status === 'disconnected' || status === 'disconnecting'}
           aria-label={t.disconnect}
-          className="flex-1 min-w-0 flex items-center justify-center gap-1.5 rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] px-3 py-2 text-sm font-medium hover:bg-[hsl(var(--muted))] disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="flex-1 min-w-[110px] flex items-center justify-center gap-1.5 rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] px-3 py-2 text-sm font-medium hover:bg-[hsl(var(--muted))] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Unplug className="w-3.5 h-3.5 shrink-0" />
-          <span className="truncate">{t.disconnect}</span>
+          <span className="break-words">{t.disconnect}</span>
         </button>
       </div>
     </div>

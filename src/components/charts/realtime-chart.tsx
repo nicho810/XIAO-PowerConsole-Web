@@ -150,7 +150,7 @@ export function RealtimeChart({
           tooltip: {
             trigger: 'axis',
             confine: true,
-            backgroundColor: isDark ? 'hsl(222 84% 6% / 0.85)' : 'hsl(0 0% 100% / 0.85)',
+            backgroundColor: isDark ? 'hsl(222 22% 8% / 0.96)' : 'hsl(0 0% 100% / 0.85)',
             borderColor: borderClr,
             borderRadius: 8,
             padding: [8, 12],
@@ -202,7 +202,7 @@ export function RealtimeChart({
             },
             axisLine: { show: false },
             axisTick: { show: false },
-            splitLine: { lineStyle: { color: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.18)', type: 'dashed', width: 0.8 } },
+            splitLine: { lineStyle: { color: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)', type: 'dashed', width: 0.8 } },
             animation: false,
           },
           series: sc.map((s, i) => {
@@ -237,7 +237,7 @@ export function RealtimeChart({
   }, []);
 
   return (
-    <div className="flex-1 min-h-[170px] rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] card-elevated overflow-hidden flex flex-col">
+    <div className="chart-panel flex-1 min-h-[170px] rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] card-elevated overflow-hidden flex flex-col">
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-[hsl(var(--border))]">
         <h3 className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--muted-foreground))]">{title}</h3>
         <span className="text-[10px] text-[hsl(var(--muted-foreground))] opacity-60">{unit}</span>

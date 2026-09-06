@@ -1,24 +1,25 @@
 /**
- * [INPUT]:  依赖 react, layout/sidebar, layout/main-content
+ * [INPUT]:  依赖 react, layout/header, layout/sidebar, layout/main-content
  * [OUTPUT]: 对外提供 App 组件 — 应用外壳
- * [POS]:    src/ 的根组件，桌面可拖拽双栏与窄屏单栏布局 (Sidebar + MainContent)
+ * [POS]:    src/ 的根组件，顶部 Header、桌面可拖拽双栏与窄屏单栏布局
  * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 
 import { useRef, useCallback, useState } from 'react';
+import { Header } from './components/layout/header.js';
 import { Sidebar } from './components/layout/sidebar.js';
 import { MainContent } from './components/layout/main-content.js';
 
 // ============================================================
-//  App Shell — 可拖拽双栏布局 (左信息区 4:8 右图表区)
+//  App Shell — 可拖拽双栏布局 (顶栏 + 设备侧栏 + 测量工作区)
 // ============================================================
 
 /** 左栏像素下限 / 上限（上限为容器宽度的 50%） */
-const MIN_LEFT_PX = 320;
+const MIN_LEFT_PX = 260;
 const MAX_LEFT_PCT = 50;
 
 export function App() {
-  const [leftPx, setLeftPx] = useState(340);
+  const [leftPx, setLeftPx] = useState(280);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // ── 拖拽分隔条 ────────────────────────────────────────────
@@ -54,7 +55,9 @@ export function App() {
   }, []);
 
   return (
-    <main ref={containerRef} className="app-shell">
+    <div className="app-shell">
+      <Header />
+      <div ref={containerRef} className="app-body">
 
       {/* 左 — 信息区 */}
       <div
@@ -66,7 +69,7 @@ export function App() {
 
       {/* 拖拽条 — 加宽 + 三圆点手柄 + 透明热区 */}
       <div
-        className="hidden lg:block relative w-px flex-shrink-0 bg-[hsl(var(--border))] hover:bg-[hsl(var(--primary))] cursor-col-resize transition-colors group before:content-[''] before:absolute before:inset-y-0 before:-left-2 before:-right-2"
+        className="hidden lg:block relative w-px flex-shrink-0 bg-[hsl(var(--border))] hover:bg-[hsl(var(--primary))] cursor-col-resize group before:content-[''] before:absolute before:inset-y-0 before:-left-2 before:-right-2"
         role="separator"
         aria-label="Resize sidebar"
         aria-orientation="vertical"
@@ -82,7 +85,7 @@ export function App() {
         }}
         onPointerDown={onPointerDown}
       >
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100">
           <span className="block w-1 h-1 rounded-full bg-[hsl(var(--muted-foreground))]" />
           <span className="block w-1 h-1 rounded-full bg-[hsl(var(--muted-foreground))]" />
           <span className="block w-1 h-1 rounded-full bg-[hsl(var(--muted-foreground))]" />
@@ -90,9 +93,10 @@ export function App() {
       </div>
 
       {/* 右 — 图表区 */}
-      <div className="app-workspace min-w-0 flex-1 p-4 lg:p-5">
+      <main className="app-workspace min-w-0 flex-1 p-4 lg:p-5">
         <MainContent />
+      </main>
       </div>
-    </main>
+    </div>
   );
 }

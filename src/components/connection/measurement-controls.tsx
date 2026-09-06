@@ -1,7 +1,7 @@
 /**
  * [INPUT]: React、显示/录制/健康/设备 store 和十语言监测文案
  * [OUTPUT]: MeasurementControls，暂停、窗口、CSV 录制导出与实时健康状态
- * [POS]: connection/ 的采集工具栏，位于主工作区顶部；健康信息始终保持实时
+ * [POS]: connection/ 的采集工具栏，位于双通道读数与图表之间；健康信息始终保持实时
  * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 import { useCallback, useEffect, useState } from 'react';
