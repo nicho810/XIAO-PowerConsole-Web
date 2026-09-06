@@ -2,7 +2,7 @@
  * [INPUT]:  无外部依赖 — 纯 TypeScript
  * [OUTPUT]: 对外提供 crc8Maxim 校验函数
  * [POS]:    protocol/ 的校验基础，被 frame-parser.ts 和 frame-builder.ts 消费
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 
 // ============================================================

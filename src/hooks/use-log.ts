@@ -2,7 +2,7 @@
  * [INPUT]:  依赖 zustand
  * [OUTPUT]: 对外提供 useLog hook 和 useLogStore — 调试日志系统
  * [POS]:    hooks/ 的日志基础设施，被全部需要日志的模块消费
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 
 import { useCallback } from 'react';

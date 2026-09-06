@@ -2,7 +2,7 @@
  * [INPUT]:  依赖 react, localStorage
  * [OUTPUT]: 对外提供 useTheme hook — 暗/亮主题持久化切换
  * [POS]:    hooks/ 的主题管理，被 Sidebar 消费
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 
 import { useState, useCallback, useEffect } from 'react';

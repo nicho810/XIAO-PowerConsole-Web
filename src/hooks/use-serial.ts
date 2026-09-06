@@ -1,109 +1,68 @@
 /**
- * [INPUT]:  依赖 react, SerialConnection, handshake, frame-parser, codec,
- *           device-store, measurement-store, use-log
- * [OUTPUT]: 对外提供 useSerial hook — 串口连接生命周期管理
- * [POS]:    hooks/ 的串口控制核心，被 ConnectionPanel 消费
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [INPUT]: 依赖 React、SerialSession、设备与测量 store、日志 hook
+ * [OUTPUT]: 对外提供 useSerial，连接/取消/断开及卸载清理
+ * [POS]: hooks/ 的会话所有者，仅被 ConnectionPanel 挂载
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
-
-import { useCallback, useRef } from 'react';
-import { SerialConnection } from '@/serial/serial-port.js';
-import { performHandshake } from '@/serial/handshake.js';
-import { FrameParser } from '@/protocol/frame-parser.js';
-import { decodeRealtimeData, decodeDeviceConfig, deriveMeasurement } from '@/protocol/codec.js';
-import { buildStopFrame, buildConfigAckFrame } from '@/protocol/frame-builder.js';
-import { FRAME_TYPE } from '@/types/protocol.js';
+import { useCallback, useEffect, useRef } from 'react';
+import { SerialSession } from '@/serial/handshake.js';
 import { useDeviceStore } from '@/store/device-store.js';
 import { pushSample, clearMeasurements } from '@/store/measurement-store.js';
 import { useLog } from './use-log.js';
 
-// ============================================================
-//  useSerial — 连接 / 断开 / 数据流管理
-// ============================================================
-
 export function useSerial() {
-  const serialRef = useRef<SerialConnection | null>(null);
-  const stopReadingRef = useRef<(() => void) | null>(null);
-
-  const { setStatus, setConfig, setError, reset } = useDeviceStore();
+  const sessionRef = useRef<SerialSession | null>(null);
   const log = useLog();
 
+  const finish = useCallback(async (session: SerialSession, error?: unknown) => {
+    if (sessionRef.current !== session) return;
+    useDeviceStore.getState().setStatus('disconnecting');
+    let failure = error;
+    try { await session.close(); } catch (err) { failure ??= err; }
+    if (sessionRef.current !== session) return;
+    sessionRef.current = null;
+    clearMeasurements();
+    useDeviceStore.getState().reset();
+    if (failure) {
+      const message = failure instanceof Error ? failure.message : String(failure);
+      useDeviceStore.getState().setError(message);
+      log(message, 'error');
+    } else log('Disconnected', 'info');
+  }, [log]);
+
   const connect = useCallback(async () => {
+    if (sessionRef.current) return;
+    const store = useDeviceStore.getState();
+    const session = new SerialSession({
+      onHandshake: () => store.setStatus('handshaking'),
+      onConfig: (config) => { store.setConfig(config); store.setStatus('streaming'); },
+      onSample: pushSample,
+      onError: (error) => { void finish(session, error); },
+    });
+    sessionRef.current = session;
+    clearMeasurements();
+    store.setStatus('connecting');
+    log('Requesting serial port...', 'info');
     try {
-      setStatus('connecting');
-      log('Requesting serial port...', 'info');
-
-      const serial = new SerialConnection();
-      serialRef.current = serial;
-      await serial.connect();
-
-      // 三阶段握手
-      setStatus('handshaking');
-      log('Starting handshake...', 'info');
-
-      const { config: deviceConfig, stopReading: stopHandshake } = await performHandshake(
-        serial,
-        (msg) => log(msg, 'info'),
-      );
-
-      // 握手完成，停止握手读取，切换到数据流读取
-      stopHandshake();
-      setConfig(deviceConfig);
-
-      // 启动数据流读取
-      // 设备可能在 STREAMING 中发起 re-handshake (协议 v1.2 Section 3.3)
-      // 收到 CONFIG 帧时自动回复 CONFIG_ACK，保持数据流不中断
-      let activeConfig = deviceConfig;
-      const parser = new FrameParser();
-      const stopReading = serial.startReading((chunk) => {
-        const frames = parser.feedMany(chunk);
-        for (const frame of frames) {
-          if (frame.type === FRAME_TYPE.REALTIME_DATA) {
-            const raw = decodeRealtimeData(frame.payload);
-            const sample = deriveMeasurement(raw, activeConfig);
-            pushSample(sample);
-          } else if (frame.type === FRAME_TYPE.DEVICE_CONFIG) {
-            // 设备 re-handshake: 更新配置 + 回复 ACK
-            activeConfig = decodeDeviceConfig(frame.payload);
-            setConfig(activeConfig);
-            serial.write(buildConfigAckFrame()).catch(() => {});
-            log('Device re-handshake: config updated, CONFIG_ACK sent', 'warning');
-          }
-        }
-      });
-
-      stopReadingRef.current = stopReading;
-      setStatus('streaming');
-      log('Streaming started', 'success');
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg);
-      log(`Connection failed: ${msg}`, 'error');
-      await cleanup();
+      await session.start();
+      if (sessionRef.current === session) log('Streaming started', 'success');
+    } catch (error) {
+      if (useDeviceStore.getState().status !== 'disconnecting') await finish(session, error);
     }
-  }, [setStatus, setConfig, setError, log]);
+  }, [finish, log]);
 
   const disconnect = useCallback(async () => {
-    log('Disconnecting...', 'warning');
-    await cleanup();
-    reset();
+    const session = sessionRef.current;
+    if (session) await finish(session);
+  }, [finish]);
+
+  useEffect(() => () => {
+    const session = sessionRef.current;
+    sessionRef.current = null;
+    if (session) void session.close().catch(() => {});
+    useDeviceStore.getState().reset();
     clearMeasurements();
-    log('Disconnected', 'warning');
-  }, [reset, log]);
-
-  const cleanup = async () => {
-    stopReadingRef.current?.();
-    stopReadingRef.current = null;
-
-    if (serialRef.current) {
-      try {
-        await serialRef.current.write(buildStopFrame());
-      } catch { /* 设备可能已断开 */ }
-
-      await serialRef.current.disconnect();
-      serialRef.current = null;
-    }
-  };
+  }, []);
 
   return { connect, disconnect };
 }

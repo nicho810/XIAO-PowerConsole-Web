@@ -2,7 +2,7 @@
  * [INPUT]:  依赖 @/types/protocol 的 SYNC_0/SYNC_1/FRAME_TYPE，依赖 @/protocol/crc8 的 crc8Maxim
  * [OUTPUT]: 对外提供 buildStartFrame、buildConfigAckFrame、buildStopFrame
  * [POS]:    protocol/ 的下行帧构造器，被串口发送层消费
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 
 import { SYNC_0, SYNC_1, FRAME_TYPE } from '@/types/protocol.js';

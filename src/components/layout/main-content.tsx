@@ -1,20 +1,23 @@
 /**
- * [INPUT]:  依赖 chart 组件 (voltage/current/power)
- * [OUTPUT]: 对外提供 MainContent 组件 — 右面板图表区
- * [POS]:    layout/ 的右侧内容区，包含三个实时图表
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [INPUT]: 双通道 MeasurementSummary 和电压/电流/功率图表
+ * [OUTPUT]: MainContent，读数优先的测量工作区
+ * [POS]: layout/ 主体；上方概览、下方趋势，空间不足时整体滚动
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
-
+import { MeasurementSummary } from '@/components/connection/measurement-summary.js';
 import { VoltageChart } from '@/components/charts/voltage-chart.js';
 import { CurrentChart } from '@/components/charts/current-chart.js';
 import { PowerChart } from '@/components/charts/power-chart.js';
 
 export function MainContent() {
   return (
-    <section className="h-full flex flex-col gap-4">
-      <VoltageChart />
-      <CurrentChart />
-      <PowerChart />
-    </section>
+    <div className="min-h-full flex flex-col gap-4">
+      <MeasurementSummary />
+      <section className="flex-1 flex flex-col gap-4 min-h-[540px]">
+        <VoltageChart />
+        <CurrentChart />
+        <PowerChart />
+      </section>
+    </div>
   );
 }

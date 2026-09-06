@@ -1,8 +1,10 @@
 @import "tailwindcss";
 
 /* ================================================================
- * shadcn/ui 风格 CSS 变量 — 亮色/暗色主题
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [INPUT]: Tailwind 4 与根元素 dark class
+ * [OUTPUT]: 主题 token、通道身份色、响应式布局和键盘焦点样式
+ * [POS]: src/ 全局样式入口，由 main.tsx 引入
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  * ================================================================ */
 
 :root {
@@ -39,10 +41,10 @@
   /* 图表系列色 — 低饱和互补配对，哑光仪表感 */
   --chart-voltage-a:   220 42% 55%;
   --chart-voltage-b:   38 40% 54%;
-  --chart-current-a:   152 38% 46%;
-  --chart-current-b:   322 36% 56%;
-  --chart-power-a:     268 36% 56%;
-  --chart-power-b:     82 34% 48%;
+  --chart-current-a: var(--chart-voltage-a);
+  --chart-current-b: var(--chart-voltage-b);
+  --chart-power-a: var(--chart-voltage-a);
+  --chart-power-b: var(--chart-voltage-b);
 
   /* 按钮语义色 */
   --btn-success:            142.1 76.2% 36.3%;
@@ -84,10 +86,10 @@
   /* 图表系列色 — 暗色模式提亮 +10% */
   --chart-voltage-a:   220 42% 65%;
   --chart-voltage-b:   38 40% 64%;
-  --chart-current-a:   152 38% 56%;
-  --chart-current-b:   322 36% 65%;
-  --chart-power-a:     268 36% 66%;
-  --chart-power-b:     82 34% 58%;
+  --chart-current-a: var(--chart-voltage-a);
+  --chart-current-b: var(--chart-voltage-b);
+  --chart-power-a: var(--chart-voltage-a);
+  --chart-power-b: var(--chart-voltage-b);
 
   /* 按钮语义色 */
   --btn-success:            142.1 70.6% 45.3%;
@@ -163,4 +165,19 @@ body {
 * {
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--border)) transparent;
+}
+
+/* -- 布局：窄屏自然滚动，桌面仅工作区与侧栏独立滚动 -- */
+.app-shell { min-height: 100dvh; display: flex; flex-direction: column; }
+.app-sidebar { width: 100%; }
+.reading-card { container-type: inline-size; }
+.reading-value { font-size: clamp(13px, 4.8cqi, 24px); overflow-wrap: anywhere; }
+@media (min-width: 1024px) {
+  .app-shell { height: 100dvh; flex-direction: row; overflow: hidden; }
+  .app-sidebar { width: var(--sidebar-width); }
+  .app-workspace { overflow-y: auto; }
+}
+button:focus-visible, a:focus-visible, summary:focus-visible, [role="separator"]:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 3px;
 }

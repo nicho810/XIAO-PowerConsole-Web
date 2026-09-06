@@ -1,12 +1,12 @@
 /**
- * [INPUT]:  依赖 RealtimeChart, measurement-store 的 buffers/getSampleCount, hooks/use-locale
+ * [INPUT]:  依赖 RealtimeChart, measurement-store 的 buffers/getMeasurementVersion, hooks/use-locale
  * [OUTPUT]: 对外提供 PowerChart 组件
  * [POS]:    charts/ 的功率图表，被 MainContent 消费
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 
 import { RealtimeChart, type BufferSeriesConfig } from './realtime-chart.js';
-import { buffers, getSampleCount } from '@/store/measurement-store.js';
+import { buffers, getMeasurementVersion } from '@/store/measurement-store.js';
 import { useLocale } from '@/hooks/use-locale.js';
 
 // ── 模块级常量 — 稳定引用，零分配 ──────────────────────────────
@@ -23,7 +23,7 @@ export function PowerChart() {
       unit="mW"
       timestampBuffer={buffers.timestamp}
       series={SERIES}
-      getSampleCount={getSampleCount}
+      getVersion={getMeasurementVersion}
     />
   );
 }

@@ -2,7 +2,7 @@
  * [INPUT]:  无外部依赖
  * [OUTPUT]: 对外提供 LOCALES 多语言字典、LOCALE_LABELS 显示名、Locale/LocaleStrings 类型
  * [POS]:    i18n/ 的核心数据层，被 hooks/use-locale 消费
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 
 // ============================================================

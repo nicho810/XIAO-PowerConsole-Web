@@ -1,98 +1,59 @@
 /**
- * [INPUT]:  依赖 Web Serial API (navigator.serial)
- * [OUTPUT]: 对外提供 SerialConnection 类 — 串口连接/断开/读写
- * [POS]:    serial/ 的底层传输封装，被 use-serial hook 消费
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [INPUT]: 依赖 Web Serial API 的串口与 Web Streams
+ * [OUTPUT]: 对外提供 SerialConnection，单读取任务与可等待的资源关闭
+ * [POS]: serial/ 的传输层，被握手会话独占持有
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
-
-// ============================================================
-//  Web Serial API 封装 — 二进制读写
-// ============================================================
-
 export class SerialConnection {
   private port: SerialPort | null = null;
   private reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
   private writer: WritableStreamDefaultWriter<Uint8Array> | null = null;
+  private reading: Promise<void> | null = null;
+  private closing = false;
 
-  /** 请求串口并打开连接 */
   async connect(baudRate = 115200): Promise<void> {
-    if (!('serial' in navigator)) {
-      throw new Error('Web Serial API not supported. Please use Chrome or Edge.');
-    }
-
+    if (!('serial' in navigator)) throw new Error('Please use Chrome or Edge with Web Serial support.');
     this.port = await navigator.serial.requestPort();
     await this.port.open({ baudRate });
   }
 
-  /** 发送二进制数据 */
   async write(data: Uint8Array): Promise<void> {
-    if (!this.port?.writable) throw new Error('Port not writable');
-
-    if (!this.writer) {
-      this.writer = this.port.writable.getWriter();
-    }
+    if (this.closing || !this.port?.writable) throw new Error('Port not writable');
+    this.writer ??= this.port.writable.getWriter();
     await this.writer.write(data);
   }
 
-  /**
-   * 启动读取循环，每次收到 chunk 回调 onData
-   * 返回一个 abort 函数用于外部终止
-   */
-  startReading(onData: (chunk: Uint8Array) => void): () => void {
+  startReading(onData: (chunk: Uint8Array) => Promise<void>): Promise<void> {
+    if (this.reading) throw new Error('Serial reader already active');
     if (!this.port?.readable) throw new Error('Port not readable');
-
-    let running = true;
-    const readable = this.port.readable;
-
-    const run = async () => {
-      while (running && readable) {
-        try {
-          this.reader = readable.getReader();
-          while (running) {
-            const { value, done } = await this.reader.read();
-            if (done || !value) break;
-            onData(value);
-          }
-        } catch (err) {
-          if (running) console.error('[Serial] read error:', err);
-        } finally {
-          this.reader?.releaseLock();
-          this.reader = null;
-        }
-      }
-    };
-
-    run();
-
-    return () => { running = false; };
+    this.reader = this.port.readable.getReader();
+    this.reading = this.readLoop(this.reader, onData);
+    return this.reading;
   }
 
-  /** 断开连接，释放所有资源 */
+  private async readLoop(reader: ReadableStreamDefaultReader<Uint8Array>, onData: (chunk: Uint8Array) => Promise<void>): Promise<void> {
+    try {
+      while (!this.closing) {
+        const { value, done } = await reader.read();
+        if (this.closing) return;
+        if (done) throw new Error('Serial device disconnected');
+        if (value) await onData(value);
+      }
+    } finally {
+      reader.releaseLock();
+      this.reader = null;
+    }
+  }
+
   async disconnect(): Promise<void> {
-    try {
-      if (this.reader) {
-        await this.reader.cancel();
-        this.reader.releaseLock();
-        this.reader = null;
-      }
-    } catch { /* ignore */ }
-
-    try {
-      if (this.writer) {
-        this.writer.releaseLock();
-        this.writer = null;
-      }
-    } catch { /* ignore */ }
-
-    try {
-      if (this.port) {
-        await this.port.close();
-        this.port = null;
-      }
-    } catch { /* ignore */ }
-  }
-
-  get isOpen(): boolean {
-    return this.port !== null;
+    this.closing = true;
+    // -- 先中断阻塞读写，再等待读取任务释放唯一的 reader 锁 --
+    await Promise.allSettled([this.reader?.cancel(), this.writer?.abort()]);
+    await this.reading?.catch(() => {});
+    this.writer?.releaseLock();
+    this.writer = null;
+    const port = this.port;
+    this.port = null;
+    if (port) await port.close();
   }
 }

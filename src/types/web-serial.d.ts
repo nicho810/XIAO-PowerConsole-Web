@@ -1,7 +1,9 @@
 /* ================================================================
- * Web Serial API 类型声明
+ * [INPUT]: DOM 和 Web Streams 类型
+ * [OUTPUT]: SerialPort、Serial 与 navigator.serial 全局声明
+ * [POS]: types/ 的浏览器串口类型补充
  * TypeScript 尚未内置 Web Serial，手动补充全局类型
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  * ================================================================ */
 
 interface SerialPortInfo {

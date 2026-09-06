@@ -1,215 +1,51 @@
-# Power Monitor Web Application
+# XIAO PowerConsole Web
 
-A pure frontend web-based power monitor that uses the Web Serial API to read JSON data from a serial port and display real-time charts for voltage, current, and power measurements.
+通过 Web Serial 连接 XIAO PowerBread 的双通道功率测量台。
+React 19 + TypeScript + Vite + Tailwind CSS + Zustand + ECharts，纯前端，无后端服务。
 
-## Features
+## 开发与验证
 
-- **Real-time Data Visualization**: Live line charts for voltage (mV), current (mA), and power (mW) across multiple channels
-- **Web Serial API Integration**: Direct serial port communication without backend requirements
-- **Responsive Design**: Works on desktop and mobile devices
-- **Dark/Light Mode**: Toggleable theme with persistent settings
-- **Debug Console**: Collapsible console for monitoring raw JSON data
-- **Multi-channel Support**: Supports up to 4 channels with distinct color coding
-- **Modern UI**: Clean, intuitive interface with smooth animations
-
-## Browser Requirements
-
-The Web Serial API is currently supported in:
-- **Chrome** (version 89+)
-- **Edge** (version 89+)
-- **Opera** (version 76+)
-
-**Note**: Firefox and Safari do not support the Web Serial API.
-
-## Data Format
-
-The application expects JSON data in the following format:
-
-```json
-{
-  "cS": [
-    {
-      "ch": 0,
-      "v_mV": 1234,
-      "c_mA": 123,
-      "p_mW": 12345,
-      "ts": 1234567890
-    }
-  ]
-}
+```sh
+npm install
+npm run dev
+npm test
+npm run build
+npm run preview
 ```
 
-### Data Fields:
-- `cS`: Array of channel data objects
-- `ch`: Channel number (0-3)
-- `v_mV`: Voltage in millivolts
-- `c_mA`: Current in milliamps
-- `p_mW`: Power in milliwatts
-- `ts`: Timestamp in Unix epoch format (seconds)
+构建输出为 `dist/`。请通过 localhost 或 HTTPS 使用串口功能；应用会在不支持 Web Serial 的环境中给出错误提示。
 
-## Hosting on GitHub Pages
+`npm test` 使用模拟串口验证生命周期、协议、测量精度、积分与峰值抽样，不需要硬件。
+开发服务器下的 `/tests/preview.html` 提供确定性测试数据，包括正负单点峰值和断流；该夹具不进入生产构建。
 
-### Method 1: Direct Upload (Recommended)
+## 使用
 
-1. **Fork or Clone this Repository**
-   ```bash
-   git clone https://github.com/yourusername/power-monitor.git
-   cd power-monitor
-   ```
+1. 连接设备并点击 Connect，在浏览器中选择串口。
+2. 应用以 115200 波特率执行 START → CONFIG → CONFIG_ACK，然后接收采样。
+3. 主工作区上方显示双通道 V / mA / mW，下方显示真实时间轴上的电压、电流和功率趋势。
+4. 设备校准参数和日志默认折叠；侧栏支持桌面拖拽与键盘左右键调整，窄屏采用单栏滚动布局。
+5. Disconnect 可取消连接或关闭采集；关闭完成后才能再次连接。浏览器端口选择器若仍打开，需要先完成选择或取消。
 
-2. **Upload Files to GitHub**
-   - Create a new repository on GitHub
-   - Upload the following files to the root of your repository:
-     - `index.html`
-     - `styles.css`
-     - `script.js`
-     - `README.md`
+## 测量语义
 
-3. **Enable GitHub Pages**
-   - Go to your repository settings
-   - Scroll down to "GitHub Pages" section
-   - Select "Deploy from a branch"
-   - Choose "main" branch and "/ (root)" folder
-   - Click "Save"
+- 协议为 XPB 二进制帧：`AA 55 TYPE LEN PAYLOAD CRC8`；CRC-8/MAXIM 覆盖 TYPE、LEN 和 PAYLOAD。
+- CONFIG 为 9 字节：两路 little-endian float32 分流电阻与一个版本字节。
+- DATA 为 20 字节：两路总线/分流电压 float32 与 uint32 毫秒时间戳。
+- 计算使用完整 float32 解码精度；格式化仅发生在显示层。无效载荷、非有限数值和非正分流电阻会终止会话并显示错误。
+- 电荷通过原始采样电流的梯形积分得到，单位 µAh/mAh；它不是能量 mWh。
+- 只对 `0 < dt ≤ 500ms` 的有效间隔积分和计时；等待连接、断流和时钟复位不计入时长。
+- 断开连接清空实时图表与读数；累计电荷和有效时长跨连接保留，由各通道 Reset 独立清除。
+- 图表保留每桶首尾和极值，默认直线连接；超过 500ms 的缺口显示断线。抽样仅用于显示，不参与计算。
+- 环形缓冲区保存最近 3000 个样本（100Hz 时约 30 秒）。设备时钟倒退时清空图表，开始新时间段。
 
-4. **Access Your Site**
-   - Your site will be available at: `https://yourusername.github.io/repository-name`
+## 架构
 
-### Method 2: Using GitHub CLI
+```text
+设备 → SerialConnection（单 reader）→ SerialSession（握手/重握手/采样）
+    → FrameParser → codec → measurement-store → 原始电荷积分
+                                             → 图表极值抽样，15fps
+                                             → 双通道读数，10Hz
+```
 
-1. **Initialize Repository**
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit"
-   ```
-
-2. **Create GitHub Repository**
-   ```bash
-   gh repo create power-monitor --public
-   git push -u origin main
-   ```
-
-3. **Enable GitHub Pages**
-   ```bash
-   gh repo edit --enable-pages
-   ```
-
-## Usage Instructions
-
-### Connecting to Serial Device
-
-1. **Open the Application**
-   - Navigate to your hosted GitHub Pages URL
-   - Ensure you're using a supported browser (Chrome/Edge)
-
-2. **Connect to Device**
-   - Click the "Connect" button in the left panel
-   - Select your serial device from the browser's port selection dialog
-   - The application will automatically start reading data
-
-3. **Monitor Data**
-   - Real-time charts will update as data arrives
-   - Each channel is displayed with a distinct color
-   - Use the debug console to monitor raw JSON data
-
-### Features
-
-- **Theme Toggle**: Click the sun/moon icon to switch between light and dark modes
-- **Console**: Click "Show/Hide" to toggle the debug console
-- **Responsive**: Works on mobile devices with touch-friendly controls
-
-## Technical Details
-
-### Architecture
-- **Pure Frontend**: No server-side code required
-- **Web Serial API**: Direct serial port communication
-- **Chart.js**: Lightweight charting library for data visualization
-- **CSS Grid/Flexbox**: Modern responsive layout
-- **Local Storage**: Theme persistence across sessions
-
-### Performance
-- **Data Limiting**: Maximum 100 data points per chart to prevent memory issues
-- **Efficient Updates**: Chart updates use 'none' animation mode for smooth performance
-- **Memory Management**: Automatic cleanup of old console messages
-
-### Error Handling
-- **Connection Errors**: Graceful handling of serial port connection issues
-- **Data Parsing**: Robust JSON parsing with error logging
-- **Browser Compatibility**: Clear error messages for unsupported browsers
-
-## Troubleshooting
-
-### Common Issues
-
-1. **"Web Serial API not supported"**
-   - Solution: Use Chrome, Edge, or Opera browser
-
-2. **"No ports available"**
-   - Solution: Ensure your device is connected and drivers are installed
-   - Check that no other application is using the serial port
-
-3. **"Permission denied"**
-   - Solution: Allow port access when prompted by the browser
-   - Check browser settings for serial port permissions
-
-4. **Charts not updating**
-   - Solution: Check the debug console for data reception
-   - Verify JSON format matches expected structure
-
-### Debug Tips
-
-- **Enable Console**: Use the debug console to monitor raw data
-- **Browser DevTools**: Check browser console for JavaScript errors
-- **Serial Monitor**: Use Arduino IDE or similar to verify data format
-
-## Development
-
-### Local Development
-
-1. **Clone Repository**
-   ```bash
-   git clone https://github.com/yourusername/power-monitor.git
-   cd power-monitor
-   ```
-
-2. **Serve Locally**
-   ```bash
-   # Using Python
-   python -m http.server 8000
-   
-   # Using Node.js
-   npx serve .
-   
-   # Using PHP
-   php -S localhost:8000
-   ```
-
-3. **Access Application**
-   - Open `http://localhost:8000` in Chrome/Edge
-   - Note: HTTPS may be required for Web Serial API in some cases
-
-### Customization
-
-- **Chart Colors**: Modify `channelColors` array in `script.js`
-- **Data Points**: Adjust `maxDataPoints` for memory/performance balance
-- **Baud Rate**: Change baud rate in `connect()` method if needed
-- **Styling**: Modify CSS variables in `styles.css` for theme customization
-
-## License
-
-This project is open source and available under the MIT License.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## Support
-
-For issues and questions:
-- Check the troubleshooting section above
-- Review browser compatibility requirements
-- Ensure your device sends data in the correct JSON format
+详细模块地图与维护规范见 [AGENTS.md](AGENTS.md)。
+真实硬件的长时间采集、拔插与操作系统驱动差异仍需设备联调验证。

@@ -2,7 +2,7 @@
  * [INPUT]:  无外部依赖 — 纯 TypeScript
  * [OUTPUT]: 对外提供 formatVoltage、formatCurrent、formatPower、cn 工具函数
  * [POS]:    lib/ 的通用格式化工具集，被 UI 展示层消费
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 
 // ============================================================

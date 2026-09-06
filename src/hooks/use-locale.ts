@@ -2,7 +2,7 @@
  * [INPUT]:  依赖 react/useSyncExternalStore, i18n/locales, localStorage
  * [OUTPUT]: 对外提供 useLocale hook — 多语言切换，模块级共享状态 + localStorage 持久化
  * [POS]:    hooks/ 的语言管理，被所有需要多语言的组件消费
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 
 import { useSyncExternalStore } from 'react';

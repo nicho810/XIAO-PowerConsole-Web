@@ -2,7 +2,7 @@
  * [INPUT]:  依赖 react, lucide-react, hooks/use-serial, hooks/use-locale, device-store
  * [OUTPUT]: 对外提供 ConnectionPanel 组件 — 连接控制按钮组
  * [POS]:    connection/ 的操作面板，被 Sidebar 消费
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 
 import { Plug, Unplug, Cable } from 'lucide-react';
@@ -17,7 +17,7 @@ export function ConnectionPanel() {
   const { t } = useLocale();
 
   const isActive = status === 'streaming';
-  const isBusy = status === 'connecting' || status === 'handshaking';
+  const isBusy = status === 'connecting' || status === 'handshaking' || status === 'disconnecting';
 
   return (
     <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] card-elevated p-4">
@@ -41,7 +41,7 @@ export function ConnectionPanel() {
         {/* Disconnect — 次要操作: outline */}
         <button
           onClick={disconnect}
-          disabled={status === 'disconnected'}
+          disabled={status === 'disconnected' || status === 'disconnecting'}
           aria-label={t.disconnect}
           className="flex-1 min-w-0 flex items-center justify-center gap-1.5 rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] px-3 py-2 text-sm font-medium hover:bg-[hsl(var(--muted))] disabled:opacity-50 disabled:cursor-not-allowed transition"
         >

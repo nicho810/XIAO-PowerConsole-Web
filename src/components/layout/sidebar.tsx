@@ -2,7 +2,7 @@
  * [INPUT]:  依赖 react, lucide-react, hooks/use-theme, hooks/use-locale, connection 组件, console 组件
  * [OUTPUT]: 对外提供 Sidebar 组件 — 左面板容器 (含标题栏 + 主题切换 + 语言选择)
  * [POS]:    layout/ 的左侧面板，包含标题、主题切换、语言选择、连接控制、设备信息和调试控制台
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -89,7 +89,7 @@ export function Sidebar() {
     <aside className="flex flex-col h-full overflow-hidden">
       {/* ── 标题 + 工具栏（固定不滚动）────────────────────────── */}
       <div className="flex-shrink-0 px-5 pt-5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img
               src="/XPB-logo.png"

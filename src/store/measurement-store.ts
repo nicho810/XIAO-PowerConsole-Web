@@ -2,10 +2,10 @@
  * [INPUT]:  依赖 @/lib/ring-buffer 的 RingBuffer，
  *           依赖 @/types/measurement 的 DualChannelSample，
  *           依赖 @/store/energy-store 的 integrateA/B/clearEnergyTimestamps
- * [OUTPUT]: 对外提供 pushSample / clearMeasurements / getSampleCount / getLatest
+ * [OUTPUT]: 对外提供 pushSample / clearMeasurements / getSampleCount / getLatest / getMeasurementVersion
  *           + buffers 环形缓冲区引用
- * [POS]:    store/ 的测量数据管理，100Hz 热路径零 React 零 Zustand
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [POS]:    store/ 的测量数据管理，100Hz 热路径零 React 零 Zustand；时钟复位清图，版本单调增长
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 
 import { RingBuffer } from '@/lib/ring-buffer.js';
@@ -19,7 +19,7 @@ import { integrateA, integrateB, clearEnergyTimestamps } from '@/store/energy-st
 const CAPACITY = 3000;
 
 // ============================================================
-//  6 个环形缓冲区 — 可变外部状态，不走 React 渲染
+//  7 个环形缓冲区 — 可变外部状态，不走 React 渲染
 // ============================================================
 
 export const buffers = {
@@ -42,8 +42,10 @@ export const buffers = {
 // ============================================================
 
 let _sampleCount = 0;
+let _version = 0;
 let _latest: DualChannelSample | null = null;
 
+export function getMeasurementVersion(): number { return _version; }
 export function getSampleCount(): number { return _sampleCount; }
 export function getLatest(): DualChannelSample | null { return _latest; }
 
@@ -53,6 +55,9 @@ export function getLatest(): DualChannelSample | null { return _latest; }
 
 /** 100Hz 热路径 — 仅写入环形缓冲区 + 更新计数器，零 GC */
 export function pushSample(sample: DualChannelSample): void {
+  if (_latest && sample.channelA.timestamp < _latest.channelA.timestamp) {
+    clearMeasurements();
+  }
   buffers.voltageA.push(sample.channelA.busVoltage);
   buffers.voltageB.push(sample.channelB.busVoltage);
   buffers.currentA.push(sample.channelA.current);
@@ -66,6 +71,7 @@ export function pushSample(sample: DualChannelSample): void {
 
   _latest = sample;
   _sampleCount++;
+  _version++;
 }
 
 /** 清空所有缓冲区和状态 */
@@ -74,4 +80,5 @@ export function clearMeasurements(): void {
   clearEnergyTimestamps();
   _latest = null;
   _sampleCount = 0;
+  _version++;
 }

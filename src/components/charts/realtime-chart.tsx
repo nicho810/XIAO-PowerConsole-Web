@@ -1,8 +1,8 @@
 /**
- * [INPUT]:  依赖 react, echarts, lib/ring-buffer（主题通过 MutationObserver 直读 DOM）
+ * [INPUT]:  依赖 react, echarts, lib/peak-sampling, lib/ring-buffer（主题通过 MutationObserver 直读 DOM）
  * [OUTPUT]: 对外提供 RealtimeChart + BufferSeriesConfig — 命令式 ECharts 实时折线图
  * [POS]:    charts/ 的基础图表组件，被 voltage/current/power chart 消费
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 
 import { useRef, useEffect, useState } from 'react';
@@ -10,7 +10,7 @@ import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
-import LinearGradient from 'zrender/lib/graphic/LinearGradient.js';
+import { peakPoints } from '@/lib/peak-sampling.js';
 import type { RingBuffer } from '@/lib/ring-buffer.js';
 
 // ── ECharts 按需注册 ───────────────────────────────────────────
@@ -22,8 +22,8 @@ echarts.use([LineChart, GridComponent, TooltipComponent, LegendComponent, Canvas
 //  性能关键路径:
 //   1. rAF 直接读 RingBuffer，React 渲染循环零参与
 //   2. 首次 replace 模式建图，后续 merge 模式只推数据
-//   3. 降采样 ~600 点，15fps 节流
-//   4. 每图表独立 rAF，负载自然分散到不同帧
+//   3. 保留桶内极值与首尾，约 600 点软预算，15fps 节流
+//   4. 无新数据不重绘，主题切换更新配置并保留实例
 // ============================================================
 
 export interface BufferSeriesConfig {
@@ -37,7 +37,7 @@ interface Props {
   unit: string;
   timestampBuffer: RingBuffer;
   series: BufferSeriesConfig[];
-  getSampleCount: () => number;
+  getVersion: () => number;
 }
 
 /** ~15fps — 每帧 3 图各一次 setOption，总 45/sec */
@@ -50,12 +50,6 @@ const MAX_DISPLAY = 600;
 function resolveHsl(cssVar: string): string {
   const raw = getComputedStyle(document.documentElement).getPropertyValue(cssVar).trim();
   return `hsl(${raw})`;
-}
-
-/** CSS 变量 → hsla() 字符串，用于面积渐变等半透明场景 */
-function resolveHsla(cssVar: string, alpha: number): string {
-  const raw = getComputedStyle(document.documentElement).getPropertyValue(cssVar).trim();
-  return `hsl(${raw} / ${alpha})`;
 }
 
 /** 原始 SI 值 → 显示单位格式化 (V 不变, A→mA, W→mW) */
@@ -71,14 +65,14 @@ function formatValue(raw: number, unit: string): string {
 /** 时间戳 → "M:SS.f" 标签 */
 function formatTimestamp(ms: number): string {
   const totalSec = ms / 1000;
-  const m = Math.floor(totalSec / 60) % 60;
+  const m = Math.floor(totalSec / 60);
   const s = Math.floor(totalSec) % 60;
   const frac = Math.floor((totalSec % 1) * 10);
   return `${m}:${String(s).padStart(2, '0')}.${frac}`;
 }
 
 export function RealtimeChart({
-  title, unit, timestampBuffer, series: seriesConfig, getSampleCount,
+  title, unit, timestampBuffer, series: seriesConfig, getVersion,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
@@ -116,7 +110,7 @@ export function RealtimeChart({
       chart.dispose();
       chartRef.current = null;
     };
-  }, [theme]);
+  }, []);
 
   // ── rAF 数据循环 — 直读 buffer → ECharts，零 React 渲染 ───
   useEffect(() => {
@@ -142,13 +136,12 @@ export function RealtimeChart({
       currentChart = chart;
       lastTheme = t;
 
-      const count = getSampleCount();
+      const count = getVersion();
 
       // ── 数据被清空 → 重置 ──────────────────────────────────
-      if (count === 0 && lastSeen !== 0) {
-        lastSeen = 0;
+      if (timestampBuffer.length === 0 && count !== lastSeen && !needsInit) {
+        lastSeen = count;
         chart.setOption({
-          xAxis: { data: [] },
           series: seriesRef.current.map((s) => ({ name: s.name, data: [] })),
         });
         return;
@@ -156,12 +149,11 @@ export function RealtimeChart({
 
       // ── 无变化且无需初始化 → 跳过 ─────────────────────────
       if (count === lastSeen && !needsInit) return;
-      lastSeen = count;
-
       // ── 节流 ~15fps ────────────────────────────────────────
       const now = performance.now();
       if (now - lastUpdate < THROTTLE_MS && !needsInit) return;
       lastUpdate = now;
+      lastSeen = count;
 
       // ── 读取 buffer ────────────────────────────────────────
       const raw = timestampBuffer.copyTo(_ts);
@@ -170,30 +162,10 @@ export function RealtimeChart({
         sc[i].buffer.copyTo(_bufs[i]);
       }
 
-      // ── 降采样: 超过显示上限时等距抽样 ─────────────────────
-      const stride = raw > MAX_DISPLAY ? Math.ceil(raw / MAX_DISPLAY) : 1;
-      const len = stride > 1 ? Math.ceil(raw / stride) : raw;
-
-      if (stride > 1) {
-        for (let j = 0; j < len; j++) {
-          const idx = j * stride;
-          _ts[j] = _ts[idx];
-          for (let i = 0; i < _bufs.length; i++) {
-            _bufs[i][j] = _bufs[i][idx];
-          }
-        }
-      }
-
-      // ── 格式化时间标签 ─────────────────────────────────────
-      const labels: string[] = new Array(len);
-      for (let j = 0; j < len; j++) {
-        labels[j] = formatTimestamp(_ts[j]);
-      }
-
-      // ── 构建 series 数据 ───────────────────────────────────
+      // -- 每条曲线保留独立极值，使用真实时间轴和断流缺口 --
       const seriesData = sc.map((s, i) => ({
         name: s.name,
-        data: Array.from(_bufs[i].subarray(0, len)),
+        data: peakPoints(_ts, _bufs[i], raw, MAX_DISPLAY),
       }));
 
       // ── setOption: 首次 replace 建图，后续 merge 推数据 ────
@@ -218,7 +190,7 @@ export function RealtimeChart({
             },
             extraCssText: 'backdrop-filter: blur(8px); box-shadow: 0 4px 16px hsl(0 0% 0% / 0.2);',
             axisPointer: { type: 'cross', crossStyle: { color: mutedFg, width: 0.8 } },
-            valueFormatter: (v: number) => `${formatValue(v, unit)} ${unit}`,
+            valueFormatter: (v: number | [number, number]) => `${formatValue(Array.isArray(v) ? v[1] : v, unit)} ${unit}`,
           },
           legend: {
             data: sc.map((s) => s.name),
@@ -231,13 +203,16 @@ export function RealtimeChart({
             itemGap: 14,
           },
           xAxis: {
-            type: 'category',
-            data: labels,
+            type: 'value',
+            min: 'dataMin',
+            max: 'dataMax',
+            axisPointer: { label: { formatter: ({ value }: { value: number }) => formatTimestamp(value) } },
             axisLabel: {
               color: mutedFg,
               fontSize: 10,
               fontFamily: "ui-monospace, 'SF Mono', 'Cascadia Code', monospace",
               hideOverlap: true,
+              formatter: formatTimestamp,
             },
             axisLine: { lineStyle: { color: borderClr } },
             splitLine: { show: false },
@@ -246,6 +221,7 @@ export function RealtimeChart({
           yAxis: {
             type: 'value',
             name: unit,
+            axisPointer: { label: { formatter: ({ value }: { value: number }) => `${formatValue(value, unit)} ${unit}` } },
             nameTextStyle: { color: mutedFg, fontSize: 10 },
             axisLabel: {
               color: mutedFg,
@@ -266,15 +242,10 @@ export function RealtimeChart({
               type: 'line',
               data: seriesData[i].data,
               showSymbol: false,
-              smooth: 0.35,
+              smooth: false,
+              connectNulls: false,
               lineStyle: { width: 2, color: resolved, cap: 'round', join: 'round' },
               itemStyle: { color: resolved },
-              areaStyle: {
-                color: new LinearGradient(0, 0, 0, 1, [
-                  { offset: 0, color: resolveHsla(s.color, 0.2) },
-                  { offset: 1, color: resolveHsla(s.color, 0) },
-                ]),
-              },
               emphasis: { disabled: true },
               animation: false,
             };
@@ -284,7 +255,6 @@ export function RealtimeChart({
       } else {
         // ── merge 模式 — 只推数据，ECharts 内部增量更新 ──────
         chart.setOption({
-          xAxis: { data: labels },
           series: seriesData,
         });
       }
@@ -296,7 +266,7 @@ export function RealtimeChart({
   }, []);
 
   return (
-    <div className="flex-1 min-h-0 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] card-elevated overflow-hidden flex flex-col">
+    <div className="flex-1 min-h-[170px] rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] card-elevated overflow-hidden flex flex-col">
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-[hsl(var(--border))]">
         <h3 className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--muted-foreground))]">{title}</h3>
         <span className="text-[10px] text-[hsl(var(--muted-foreground))] opacity-60">{unit}</span>

@@ -2,7 +2,7 @@
  * [INPUT]:  无外部依赖 — 纯类型定义
  * [OUTPUT]: 对外提供 ChannelMeasurement、DualChannelSample 导出测量接口
  * [POS]:    types/ 的测量语义层，由 protocol/codec.ts 生产，被 UI 组件消费
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 
 // ============================================================

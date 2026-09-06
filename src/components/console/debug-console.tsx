@@ -1,8 +1,8 @@
 /**
  * [INPUT]:  依赖 react, lucide-react, hooks/use-log, hooks/use-locale
- * [OUTPUT]: 对外提供 DebugConsole 组件 — 可折叠日志面板
+ * [OUTPUT]: 对外提供 DebugConsole 组件 — 默认折叠的日志面板
  * [POS]:    console/ 的调试日志显示，被 Sidebar 消费
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 
 import { useState, useRef, useEffect } from 'react';
@@ -19,7 +19,7 @@ const LEVEL_CLASS: Record<LogLevel, string> = {
 };
 
 export function DebugConsole() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const entries = useLogStore((s) => s.entries);
   const clear   = useLogStore((s) => s.clear);
   const { t }   = useLocale();
@@ -33,7 +33,7 @@ export function DebugConsole() {
 
   return (
     <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] card-elevated">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-[hsl(var(--border))]">
+      <div className={`flex items-center justify-between px-4 py-2 ${collapsed ? '' : 'border-b border-[hsl(var(--border))]'}`}>
         <div className="flex items-center gap-2">
           <Terminal className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
           <h3 className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">{t.debugConsole}</h3>

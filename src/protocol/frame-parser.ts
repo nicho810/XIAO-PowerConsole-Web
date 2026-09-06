@@ -2,7 +2,7 @@
  * [INPUT]:  依赖 @/types/protocol 的帧常量与状态枚举，依赖 @/protocol/crc8 的 crc8Maxim
  * [OUTPUT]: 对外提供 FrameParser 字节级状态机解析器
  * [POS]:    protocol/ 的核心解析引擎，被串口数据流驱动层消费
- * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 
 import {

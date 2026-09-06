@@ -1,0 +1,30 @@
+<!doctype html>
+<!--
+[INPUT]: 开发服务器的应用入口和原始测量 store
+[OUTPUT]: 确定性的双通道读数、窄峰值与断流预览
+[POS]: tests/ 的开发态视觉夹具，不进入生产构建
+[PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
+-->
+<html lang="en">
+  <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>PowerConsole · Test fixture</title></head>
+  <body>
+    <div id="root"></div>
+    <script type="module">
+      import '/src/main.tsx';
+      import { pushSample } from '/src/store/measurement-store.ts';
+      import { useDeviceStore } from '/src/store/device-store.ts';
+      // -- 等待 StrictMode 挂载清理完成，再提供确定性的静态样本 --
+      setTimeout(() => {
+        useDeviceStore.getState().setConfig({ shuntR_a: 0.00049, shuntR_b: 0.123456, version: 1 });
+        useDeviceStore.getState().setStatus('test-mode');
+        for (let i = 0; i < 3000; i++) {
+          const timestamp = i * 10 + (i >= 1500 ? 1000 : 0);
+          const currentA = i === 1703 ? 1.2 : 0.025 + Math.sin(i / 80) * 0.005;
+          const currentB = i === 2009 ? -0.08 : 0.015 + Math.cos(i / 65) * 0.003;
+          const make = (voltage, current) => ({ busVoltage: voltage, shuntVoltage: current * 0.01, current, power: voltage * current, timestamp });
+          pushSample({ channelA: make(5.003, currentA), channelB: make(3.301, currentB) });
+        }
+      }, 100);
+    </script>
+  </body>
+</html>
