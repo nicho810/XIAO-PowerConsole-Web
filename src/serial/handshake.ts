@@ -15,11 +15,13 @@ interface SessionEvents {
   onHandshake: () => void;
   onConfig: (config: DeviceConfigPayload) => void;
   onSample: (sample: DualChannelSample) => void;
+  onCrcError?: () => void;
+  onBytes?: (bytes: number) => void;
   onError: (error: unknown) => void;
 }
 
 export class SerialSession {
-  private readonly parser = new FrameParser();
+  private readonly parser: FrameParser;
   private config: DeviceConfigPayload | null = null;
   private closed = false;
   private opening: Promise<void> | null = null;
@@ -27,7 +29,9 @@ export class SerialSession {
   private resolveReady: () => void = () => {};
   private rejectReady: (error: unknown) => void = () => {};
 
-  constructor(private readonly events: SessionEvents, private readonly serial = new SerialConnection()) {}
+  constructor(private readonly events: SessionEvents, private readonly serial = new SerialConnection()) {
+    this.parser = new FrameParser(() => this.events.onCrcError?.());
+  }
 
   async start(timeoutMs = 3000): Promise<void> {
     this.opening = this.serial.connect();
@@ -49,6 +53,7 @@ export class SerialSession {
   }
 
   private async consume(chunk: Uint8Array): Promise<void> {
+    this.events.onBytes?.(chunk.length);
     // -- 保留跨 chunk 的解析状态；CONFIG 后同一 chunk 的采样也不会丢失 --
     for (const frame of this.parser.feedMany(chunk)) {
       if (this.closed) return;

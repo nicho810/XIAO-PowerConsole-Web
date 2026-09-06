@@ -1,5 +1,5 @@
 /**
- * [INPUT]: 依赖 React、SerialSession、设备与测量 store、日志 hook
+ * [INPUT]: 依赖 React、SerialSession、设备/测量/录制/健康 store、日志 hook
  * [OUTPUT]: 对外提供 useSerial，连接/取消/断开及卸载清理
  * [POS]: hooks/ 的会话所有者，仅被 ConnectionPanel 挂载
  * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
@@ -8,6 +8,8 @@ import { useCallback, useEffect, useRef } from 'react';
 import { SerialSession } from '@/serial/handshake.js';
 import { useDeviceStore } from '@/store/device-store.js';
 import { pushSample, clearMeasurements } from '@/store/measurement-store.js';
+import { recording } from '@/store/recording-store.js';
+import { streamHealth } from '@/store/health-store.js';
 import { useLog } from './use-log.js';
 
 export function useSerial() {
@@ -16,6 +18,8 @@ export function useSerial() {
 
   const finish = useCallback(async (session: SerialSession, error?: unknown) => {
     if (sessionRef.current !== session) return;
+    recording.stop('disconnected');
+    streamHealth.end();
     useDeviceStore.getState().setStatus('disconnecting');
     let failure = error;
     try { await session.close(); } catch (err) { failure ??= err; }
@@ -34,8 +38,10 @@ export function useSerial() {
     if (sessionRef.current) return;
     const store = useDeviceStore.getState();
     const session = new SerialSession({
-      onHandshake: () => store.setStatus('handshaking'),
-      onConfig: (config) => { store.setConfig(config); store.setStatus('streaming'); },
+      onHandshake: () => { streamHealth.begin(); store.setStatus('handshaking'); },
+      onConfig: (config) => { recording.setConfig(config); store.setConfig(config); store.setStatus('streaming'); },
+      onCrcError: () => streamHealth.crcError(),
+      onBytes: (bytes) => streamHealth.receiveBytes(bytes),
       onSample: pushSample,
       onError: (error) => { void finish(session, error); },
     });
@@ -60,6 +66,8 @@ export function useSerial() {
     const session = sessionRef.current;
     sessionRef.current = null;
     if (session) void session.close().catch(() => {});
+    recording.stop('disconnected');
+    streamHealth.end();
     useDeviceStore.getState().reset();
     clearMeasurements();
   }, []);

@@ -1,29 +1,45 @@
 <!doctype html>
 <!--
-[INPUT]: 开发服务器的应用入口和原始测量 store
-[OUTPUT]: 确定性的双通道读数、窄峰值与断流预览
-[POS]: tests/ 的开发态视觉夹具，不进入生产构建
+[INPUT]: 开发态应用、原始测量 store 与健康诊断
+[OUTPUT]: 连续模拟采样、峰值、断流与 CRC 故障按钮
+[POS]: tests/ 的视觉/交互夹具，不进入生产构建
 [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
 -->
 <html lang="en">
   <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>PowerConsole · Test fixture</title></head>
   <body>
     <div id="root"></div>
+    <div style="position:fixed;bottom:12px;left:12px;z-index:100;background:#172033;color:white;padding:8px;border-radius:8px;font:11px system-ui;box-shadow:0 1px 8px #0004">
+      <span>SIMULATED DEVICE</span>
+      <button id="simulate-stop" style="margin-left:8px;cursor:pointer">Stop samples</button>
+      <button id="simulate-crc" style="margin-left:8px;cursor:pointer">CRC +1</button>
+    </div>
     <script type="module">
       import '/src/main.tsx';
       import { pushSample } from '/src/store/measurement-store.ts';
       import { useDeviceStore } from '/src/store/device-store.ts';
-      // -- 等待 StrictMode 挂载清理完成，再提供确定性的静态样本 --
+      import { streamHealth } from '/src/store/health-store.ts';
+      function emit(i) {
+        const timestamp = i * 10 + (i >= 1500 ? 1000 : 0);
+        const currentA = i % 2500 === 1703 ? 1.2 : 0.025 + Math.sin(i / 80) * 0.005;
+        const currentB = i % 2500 === 2009 ? -0.08 : 0.015 + Math.cos(i / 65) * 0.003;
+        const make = (voltage, current) => ({ busVoltage: voltage, shuntVoltage: current * 0.01, current, power: voltage * current, timestamp });
+        pushSample({ channelA: make(5.003, currentA), channelB: make(3.301, currentB) });
+      }
+      // -- StrictMode 挂载后播种历史；健康计数从实时模拟开始 --
       setTimeout(() => {
         useDeviceStore.getState().setConfig({ shuntR_a: 0.00049, shuntR_b: 0.123456, version: 1 });
         useDeviceStore.getState().setStatus('test-mode');
-        for (let i = 0; i < 3000; i++) {
-          const timestamp = i * 10 + (i >= 1500 ? 1000 : 0);
-          const currentA = i === 1703 ? 1.2 : 0.025 + Math.sin(i / 80) * 0.005;
-          const currentB = i === 2009 ? -0.08 : 0.015 + Math.cos(i / 65) * 0.003;
-          const make = (voltage, current) => ({ busVoltage: voltage, shuntVoltage: current * 0.01, current, power: voltage * current, timestamp });
-          pushSample({ channelA: make(5.003, currentA), channelB: make(3.301, currentB) });
-        }
+        for (let i = 0; i < 3000; i++) emit(i);
+        streamHealth.begin();
+        let sampleIndex = 3000;
+        let timer = setInterval(() => emit(sampleIndex++), 10);
+        const stop = document.querySelector('#simulate-stop');
+        stop.onclick = () => {
+          if (timer) { clearInterval(timer); timer = null; stop.textContent = 'Resume samples'; }
+          else { timer = setInterval(() => emit(sampleIndex++), 10); stop.textContent = 'Stop samples'; }
+        };
+        document.querySelector('#simulate-crc').onclick = () => streamHealth.crcError();
       }, 100);
     </script>
   </body>

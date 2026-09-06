@@ -1,5 +1,5 @@
 /**
- * [INPUT]:  依赖 react, echarts, lib/peak-sampling, lib/ring-buffer（主题通过 MutationObserver 直读 DOM）
+ * [INPUT]:  依赖 react, echarts, store/chart-view-store（主题通过 MutationObserver 直读 DOM）
  * [OUTPUT]: 对外提供 RealtimeChart + BufferSeriesConfig — 命令式 ECharts 实时折线图
  * [POS]:    charts/ 的基础图表组件，被 voltage/current/power chart 消费
  * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
@@ -10,8 +10,7 @@ import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
-import { peakPoints } from '@/lib/peak-sampling.js';
-import type { RingBuffer } from '@/lib/ring-buffer.js';
+import { getChartFrame, type SeriesKey } from '@/store/chart-view-store.js';
 
 // ── ECharts 按需注册 ───────────────────────────────────────────
 echarts.use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer]);
@@ -20,31 +19,23 @@ echarts.use([LineChart, GridComponent, TooltipComponent, LegendComponent, Canvas
 //  RealtimeChart — 完全命令式 ECharts 更新
 // ============================================================
 //  性能关键路径:
-//   1. rAF 直接读 RingBuffer，React 渲染循环零参与
-//   2. 首次 replace 模式建图，后续 merge 模式只推数据
-//   3. 保留桶内极值与首尾，约 600 点软预算，15fps 节流
+//   1. rAF 读取三图共享显示帧，React 渲染循环零参与
+//   2. 首次 replace 建图，后续 merge；connect 同步游标
+//   3. 共用极值索引和真实时间轴，约 600 点软预算，15fps 节流
 //   4. 无新数据不重绘，主题切换更新配置并保留实例
 // ============================================================
 
 export interface BufferSeriesConfig {
   name: string;
   color: string;
-  buffer: RingBuffer;
+  key: SeriesKey;
 }
 
 interface Props {
   title: string;
   unit: string;
-  timestampBuffer: RingBuffer;
   series: BufferSeriesConfig[];
-  getVersion: () => number;
 }
-
-/** ~15fps — 每帧 3 图各一次 setOption，总 45/sec */
-const THROTTLE_MS = 66;
-
-/** 显示上限 — 图表宽度约 600~800px，超出无视觉意义 */
-const MAX_DISPLAY = 600;
 
 /** CSS 变量 → hsl() 字符串，仅在 needsInit 时调用 */
 function resolveHsl(cssVar: string): string {
@@ -71,8 +62,16 @@ function formatTimestamp(ms: number): string {
   return `${m}:${String(s).padStart(2, '0')}.${frac}`;
 }
 
+/** 游标保留毫秒，区分 100Hz 下相邻采样。 */
+function formatCursorTimestamp(ms: number): string {
+  const rounded = Math.round(ms);
+  const minutes = Math.floor(rounded / 60000);
+  const seconds = Math.floor(rounded / 1000) % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}.${String(rounded % 1000).padStart(3, '0')}`;
+}
+
 export function RealtimeChart({
-  title, unit, timestampBuffer, series: seriesConfig, getVersion,
+  title, unit, series: seriesConfig,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
@@ -101,6 +100,8 @@ export function RealtimeChart({
 
     const chart = echarts.init(containerRef.current);
     chartRef.current = chart;
+    chart.group = 'powerconsole-measurements';
+    echarts.connect(chart.group);
 
     const observer = new ResizeObserver(() => chart.resize());
     observer.observe(containerRef.current);
@@ -112,18 +113,12 @@ export function RealtimeChart({
     };
   }, []);
 
-  // ── rAF 数据循环 — 直读 buffer → ECharts，零 React 渲染 ───
+  // ── rAF 显示循环 — 读取同步快照 → ECharts，零 React 渲染 ───
   useEffect(() => {
     let rafId = 0;
-    let lastSeen = 0;
-    let lastUpdate = 0;
+    let lastSeen = -1;
     let currentChart: echarts.ECharts | null = null;
     let lastTheme = '';
-
-    // ── 预分配读取缓冲区 ──────────────────────────────────────
-    const cap = timestampBuffer.capacity;
-    const _ts = new Float64Array(cap);
-    const _bufs = seriesConfig.map(() => new Float64Array(cap));
 
     function tick() {
       rafId = requestAnimationFrame(tick);
@@ -136,37 +131,12 @@ export function RealtimeChart({
       currentChart = chart;
       lastTheme = t;
 
-      const count = getVersion();
-
-      // ── 数据被清空 → 重置 ──────────────────────────────────
-      if (timestampBuffer.length === 0 && count !== lastSeen && !needsInit) {
-        lastSeen = count;
-        chart.setOption({
-          series: seriesRef.current.map((s) => ({ name: s.name, data: [] })),
-        });
-        return;
-      }
-
-      // ── 无变化且无需初始化 → 跳过 ─────────────────────────
-      if (count === lastSeen && !needsInit) return;
-      // ── 节流 ~15fps ────────────────────────────────────────
-      const now = performance.now();
-      if (now - lastUpdate < THROTTLE_MS && !needsInit) return;
-      lastUpdate = now;
-      lastSeen = count;
-
-      // ── 读取 buffer ────────────────────────────────────────
-      const raw = timestampBuffer.copyTo(_ts);
+      const frame = getChartFrame();
+      if (frame.version === lastSeen && !needsInit) return;
+      lastSeen = frame.version;
       const sc = seriesRef.current;
-      for (let i = 0; i < sc.length; i++) {
-        sc[i].buffer.copyTo(_bufs[i]);
-      }
-
-      // -- 每条曲线保留独立极值，使用真实时间轴和断流缺口 --
-      const seriesData = sc.map((s, i) => ({
-        name: s.name,
-        data: peakPoints(_ts, _bufs[i], raw, MAX_DISPLAY),
-      }));
+      const seriesData = sc.map((s) => ({ name: s.name, data: frame.series[s.key] }));
+      const xRange = { min: frame.min ?? 0, max: frame.max ?? 1 };
 
       // ── setOption: 首次 replace 建图，后续 merge 推数据 ────
       if (needsInit) {
@@ -179,6 +149,7 @@ export function RealtimeChart({
           grid: { left: 50, right: 16, top: 28, bottom: 28, containLabel: false },
           tooltip: {
             trigger: 'axis',
+            confine: true,
             backgroundColor: isDark ? 'hsl(222 84% 6% / 0.85)' : 'hsl(0 0% 100% / 0.85)',
             borderColor: borderClr,
             borderRadius: 8,
@@ -189,7 +160,7 @@ export function RealtimeChart({
               fontFamily: "ui-monospace, 'SF Mono', 'Cascadia Code', monospace",
             },
             extraCssText: 'backdrop-filter: blur(8px); box-shadow: 0 4px 16px hsl(0 0% 0% / 0.2);',
-            axisPointer: { type: 'cross', crossStyle: { color: mutedFg, width: 0.8 } },
+            axisPointer: { type: 'line', axis: 'x', lineStyle: { color: mutedFg, width: 0.8 } },
             valueFormatter: (v: number | [number, number]) => `${formatValue(Array.isArray(v) ? v[1] : v, unit)} ${unit}`,
           },
           legend: {
@@ -204,9 +175,8 @@ export function RealtimeChart({
           },
           xAxis: {
             type: 'value',
-            min: 'dataMin',
-            max: 'dataMax',
-            axisPointer: { label: { formatter: ({ value }: { value: number }) => formatTimestamp(value) } },
+            ...xRange,
+            axisPointer: { snap: true, label: { formatter: ({ value }: { value: number }) => formatCursorTimestamp(value) } },
             axisLabel: {
               color: mutedFg,
               fontSize: 10,
@@ -255,6 +225,7 @@ export function RealtimeChart({
       } else {
         // ── merge 模式 — 只推数据，ECharts 内部增量更新 ──────
         chart.setOption({
+          xAxis: xRange,
           series: seriesData,
         });
       }

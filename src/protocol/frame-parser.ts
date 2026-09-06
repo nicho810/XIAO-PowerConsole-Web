@@ -1,6 +1,6 @@
 /**
  * [INPUT]:  依赖 @/types/protocol 的帧常量与状态枚举，依赖 @/protocol/crc8 的 crc8Maxim
- * [OUTPUT]: 对外提供 FrameParser 字节级状态机解析器
+ * [OUTPUT]: 对外提供 FrameParser 字节级状态机解析器，支持 CRC 错误回调
  * [POS]:    protocol/ 的核心解析引擎，被串口数据流驱动层消费
  * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
@@ -24,6 +24,8 @@ import { crc8Maxim } from './crc8.js';
 const MAX_PAYLOAD_LEN = 64;
 
 export class FrameParser {
+  constructor(private readonly onCrcError?: () => void) {}
+
   private _state: ParserState = ParserState.WAIT_SYNC_0;
   private _type  = 0;
   private _len   = 0;
@@ -107,7 +109,10 @@ export class FrameParser {
 
     this._reset();
 
-    if (byte !== computedCrc) return null;
+    if (byte !== computedCrc) {
+      this.onCrcError?.();
+      return null;
+    }
 
     return { type: frameType, payload };
   }

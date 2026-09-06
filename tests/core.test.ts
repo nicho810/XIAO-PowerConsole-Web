@@ -4,6 +4,7 @@
  * [POS]: tests/ 的边界与生命周期验证
  * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
+import './monitor.test.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SerialConnection } from '../src/serial/serial-port.js';

@@ -1,5 +1,5 @@
 /**
- * [INPUT]:  依赖 @/lib/ring-buffer 的 RingBuffer，
+ * [INPUT]:  依赖 recording-store、health-store 与 @/lib/ring-buffer 的 RingBuffer，
  *           依赖 @/types/measurement 的 DualChannelSample，
  *           依赖 @/store/energy-store 的 integrateA/B/clearEnergyTimestamps
  * [OUTPUT]: 对外提供 pushSample / clearMeasurements / getSampleCount / getLatest / getMeasurementVersion
@@ -8,6 +8,8 @@
  * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 
+import { recording } from './recording-store.js';
+import { streamHealth } from './health-store.js';
 import { RingBuffer } from '@/lib/ring-buffer.js';
 import type { DualChannelSample } from '@/types/measurement.js';
 import { integrateA, integrateB, clearEnergyTimestamps } from '@/store/energy-store.js';
@@ -33,12 +35,9 @@ export const buffers = {
 };
 
 // ============================================================
-//  模块级可变状态 — 100Hz 热路径，零分配，零通知
+//  模块级可变状态 — 100Hz 热路径，无 React 通知；录制单独分块追加
 // ============================================================
-//  不用 Zustand 是因为:
-//   set() 每次调用创建 3 个对象 + 通知所有订阅者
-//   100Hz × 3 objects = 300 objects/sec 纯开销
-//   消费端改用 rAF 轮询，按显示帧率读取即可
+//  采集不广播高频 React 更新；图表按 15fps 读取共享帧，数字按 10Hz 更新。
 // ============================================================
 
 let _sampleCount = 0;
@@ -53,7 +52,7 @@ export function getLatest(): DualChannelSample | null { return _latest; }
 //  写入接口
 // ============================================================
 
-/** 100Hz 热路径 — 仅写入环形缓冲区 + 更新计数器，零 GC */
+/** 100Hz 热路径 — 写入原始采样、积分与录制；仅启用录制时分配 CSV 行 */
 export function pushSample(sample: DualChannelSample): void {
   if (_latest && sample.channelA.timestamp < _latest.channelA.timestamp) {
     clearMeasurements();
@@ -69,6 +68,8 @@ export function pushSample(sample: DualChannelSample): void {
   integrateA(sample.channelA.current, sample.channelA.timestamp);
   integrateB(sample.channelB.current, sample.channelB.timestamp);
 
+  recording.append(sample);
+  streamHealth.sample();
   _latest = sample;
   _sampleCount++;
   _version++;

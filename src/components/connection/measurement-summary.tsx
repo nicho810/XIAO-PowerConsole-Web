@@ -1,28 +1,24 @@
 /**
- * [INPUT]: React、测量/电荷 store、useLocale 与物理量格式化工具
+ * [INPUT]: React、显示快照/电荷 store、useLocale 与物理量格式化工具
  * [OUTPUT]: MeasurementSummary，双通道实时读数和紧凑电荷统计
  * [POS]: connection/ 的主要读数视图，由 MainContent 放在图表之前
  * [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
  */
 import { useCallback, useEffect, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { getLatest, getSampleCount, getMeasurementVersion } from '@/store/measurement-store.js';
-import { snapshotA, snapshotB, resetA, resetB } from '@/store/energy-store.js';
+import { getDisplayReadings, getDisplayVersion, getViewState } from '@/store/chart-view-store.js';
+import { resetA, resetB } from '@/store/energy-store.js';
 import { formatVoltage, formatCurrent, formatPower, formatElapsed } from '@/lib/utils.js';
 import { useLocale } from '@/hooks/use-locale.js';
 
-function readSnapshot() {
-  return { latest: getLatest(), count: getSampleCount(), charge: [snapshotA(), snapshotB()] };
-}
-
 function useReadings() {
-  const [reading, setReading] = useState(readSnapshot);
-  const refresh = useCallback(() => setReading(readSnapshot()), []);
+  const [reading, setReading] = useState(getDisplayReadings);
+  const refresh = useCallback(() => setReading(getDisplayReadings()), []);
   useEffect(() => {
-    let version = getMeasurementVersion();
+    let version = getDisplayVersion();
     refresh();
     const timer = setInterval(() => {
-      const next = getMeasurementVersion();
+      const next = getDisplayVersion();
       if (next === version) return;
       version = next;
       refresh();
@@ -70,7 +66,8 @@ export function MeasurementSummary() {
               </span>
               <span className="text-[hsl(var(--muted-foreground))] data-value" title={t.elapsed}>{formatElapsed(charge.elapsedMs)}</span>
               <button
-                className="ml-auto inline-flex items-center gap-1 rounded px-1.5 py-1 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                className="disabled:opacity-40 disabled:cursor-not-allowed ml-auto inline-flex items-center gap-1 rounded px-1.5 py-1 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                disabled={getViewState().paused}
                 aria-label={`${t.reset} · ${label} · ${t.charge}`}
                 onClick={() => { (index === 0 ? resetA : resetB)(); refresh(); }}
               ><RotateCcw className="w-3 h-3" />{t.reset}</button>

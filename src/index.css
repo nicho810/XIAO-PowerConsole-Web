@@ -181,3 +181,16 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="separator"]
   outline: 2px solid hsl(var(--ring));
   outline-offset: 3px;
 }
+
+/* -- 采集工具栏：紧凑但保留键盘焦点与触控高度 -- */
+.monitor-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 34px; padding: 6px 10px; border: 1px solid hsl(var(--border));
+  border-radius: 6px; background: hsl(var(--background)); color: hsl(var(--foreground));
+  font-size: 12px; cursor: pointer;
+}
+.monitor-button svg { width: 14px; height: 14px; flex-shrink: 0; }
+.monitor-button:hover:not(:disabled) { background: hsl(var(--muted)); }
+.monitor-button:disabled { opacity: 0.4; cursor: not-allowed; }
+.monitor-button[aria-pressed="true"] { border-color: hsl(var(--warning)); }
+select:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 3px; }
