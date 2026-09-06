@@ -3,10 +3,22 @@
 通过 Web Serial 连接 XIAO PowerBread 的双通道功率测量台。
 React 19 + TypeScript + Vite + Tailwind CSS + Zustand + ECharts，纯前端，无后端服务。
 
+![深色测量界面，使用模拟设备数据](docs/console-preview.png)
+
+## 状态与兼容性
+
+当前作为公开预览版准备，尚未完成跨系统真机稳定性认证。
+
+- 开发环境：Node.js 22 或 24、npm；可用 `nvm use` 选择项目版本。统一提交 `package-lock.json`。
+- 浏览器：使用支持 Web Serial 的桌面 Chromium 浏览器；须通过 localhost 或 HTTPS 打开，并由用户选择串口。其他环境以 `navigator.serial` 是否可用为准，参考 [Web Serial 文档](https://developer.chrome.com/docs/capabilities/serial)。
+- 硬件：[XIAO PowerBread](https://github.com/nicho810/XIAO-PowerBread)，固件须实现下述 XPB 二进制握手与帧格式；目前未声明经过验证的固件发布版本范围。
+- 无硬件体验：启动开发服务器，打开 `/tests/preview.html`；页面数据为模拟数据，不代表真实测量结果。
+- 正式部署仅上传 `dist/`，不公开开发服务器。
+
 ## 开发与验证
 
 ```sh
-npm install
+npm ci
 npm run dev
 npm test
 npm run build
@@ -22,7 +34,7 @@ npm run preview
 
 1. 连接设备并点击 Connect，在浏览器中选择串口。
 2. 应用以 115200 波特率执行 START → CONFIG → CONFIG_ACK，然后接收采样。
-3. 主工作区上方显示双通道 V / mA / mW，下方显示真实时间轴上的电压、电流和功率趋势。
+3. 主工作区优先显示双通道功率，电压、电流、电荷作为次级读数；下方依次排列功率、电流、电压趋势。
 4. 设备校准参数和日志默认折叠；侧栏支持桌面拖拽与键盘左右键调整，窄屏采用单栏滚动布局。
 5. Disconnect 可取消连接或关闭采集；关闭完成后才能再次连接。浏览器端口选择器若仍打开，需要先完成选择或取消。
 
@@ -70,3 +82,19 @@ npm run preview
 ## 采集健康状态
 
 显示最近约 2 秒的有效样本接收速率、最后有效采样的年龄与 CRC 错误数。连接开始时重置统计；超过 2 秒没有有效样本时显示断流，数据恢复后自动恢复正常。主机单调时钟用于健康检测，设备时钟复位不影响它。CRC 错误计数仅代表校验失败帧，不是精确丢包数。
+
+## 参与贡献
+
+问题反馈与提交前检查见 [CONTRIBUTING.md](CONTRIBUTING.md)。GitHub Actions 在 push 和 PR 时运行 Node 22/24 的安装、测试、构建与依赖审计。
+
+发布前真机检查：连续采集至少一小时、反复拔插与重连、握手取消、暂停期间录制、CSV 与设备数据核对；记录操作系统、浏览器版本、固件版本及结果。模拟测试不能替代这些检查。
+
+## 许可证
+
+Copyright (C) 2026 Nicho Deng.
+
+本项目采用 **GNU GPL v3.0 only**（SPDX: `GPL-3.0-only`），完整条款见 [LICENSE](LICENSE)。允许商业使用、修改和分发；分发本项目或受 GPL 覆盖的修改版时，须遵守 GPLv3，保留版权及许可声明、注明修改，并按许可要求向接收者提供对应源码。内部使用且不分发的修改无需公开；也不要求把源码发布给全世界。
+
+本软件不提供任何担保，具体免责条款见 LICENSE。第三方依赖保留各自许可证；关联硬件和固件项目的授权以各自仓库为准。
+
+部署到 Cloudflare Workers 的前端 JavaScript 会被发送到用户浏览器。发布构建产物时，应同时提供对应版本的完整源码及必要构建文件，并在下载或应用入口显著提供源码和许可证链接；建议使用固定 release/tag 对应部署版本，不能只链接可能继续变化的默认分支。

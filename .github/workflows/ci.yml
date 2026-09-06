@@ -1,0 +1,27 @@
+# [INPUT]: npm 锁文件、测试与构建脚本
+# [OUTPUT]: Node 22/24 验证结果
+# [POS]: 仓库持续集成，不部署产物
+# [PROTOCOL]: 变更时更新此头部，然后检查 AGENTS.md
+name: CI
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npm audit --audit-level=moderate
