@@ -18,7 +18,7 @@ CONTRIBUTING.md — 问题反馈、开发与 PR 验证约定。
 vite.config.ts — React、Tailwind 与路径别名。
 tsconfig*.json — TypeScript 严格编译配置。
 wrangler.jsonc — 现有静态资源部署配置。
-README.md — 开发、测量语义、验证和使用说明。
+README.md — 英文项目入口，包含开发、测量语义、验证、使用与许可说明。
 CLAUDE.md — 历史入口，架构以 AGENTS.md 为准。
 
 ## 决策与规范
